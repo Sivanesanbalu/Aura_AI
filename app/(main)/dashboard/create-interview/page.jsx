@@ -9,6 +9,7 @@ import QuestionList from './_components/QuestionList';
 import { toast } from 'sonner';
 import InterviewLink from './_components/InterviewLink';
 import SyncUserToSupabase from '@/app/components/SyncUserToSupabase'; // adjust path if needed
+import { useUser } from '@clerk/nextjs';
 
 function CreateInterview() {
   const router = useRouter();
@@ -16,6 +17,10 @@ function CreateInterview() {
   const [formData, setFormData] = useState({});
   const [interviewId, setInterviewId] = useState();
   const [questionList, setQuestionList] = useState([]);
+  const { user } = useUser();
+
+  // Extract credits safely from user object (adjust if your credits are stored differently)
+  const userCredits = user?.publicMetadata?.credits ?? 0;
 
   const onHandleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -26,6 +31,10 @@ function CreateInterview() {
   };
 
   const onGoToNext = () => {
+    if (user !== null && userCredits <= 0) {
+      toast("Please add credits");
+      return;
+    }
     if (!formData?.jobPosition || !formData?.jobDescription || !formData?.duration || !formData?.type) {
       toast('Please enter all details!');
       return;

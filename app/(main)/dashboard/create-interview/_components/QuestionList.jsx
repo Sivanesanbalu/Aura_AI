@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Loader2Icon } from 'lucide-react';
+import { Loader2Icon, User } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -36,37 +36,66 @@ function QuestionList({ formData, interview_id, onCreateLink, questionList, setQ
   };
 
   const onFinish = async () => {
-    setSaving(true);
-    const generatedId = interview_id || uuidv4();
+  setSaving(true);
+  const generatedId = interview_id || uuidv4();
 
-    const dataToInsert = {
+  const dataToInsert = {
     user_id: formData.user_id,
     jobPosition: formData.jobPosition,
     jobDescription: formData.jobDescription,
     duration: formData.duration,
     type: formData.type,
     questionList: questionList,
-    email: user?.emailAddresses[0]?.emailAddress || '',  // get email from Clerk user object
+    email: user?.emailAddresses[0]?.emailAddress || '',
     interview_id: generatedId,
   };
 
-    const { data, error } = await supabase
-      .from('interview')
-      .insert([dataToInsert])
-      
-      .select();
+  const { data, error } = await supabase
+    .from('interview')
+    .insert([dataToInsert])
+    .select();
 
+  if (error) {
+    console.error('Supabase insert error:', error);
+    toast.error('Failed to save interview.');
     setSaving(false);
+    return;
+  }
 
-    if (error) {
-      console.error('Supabase insert error:', error);
-      toast.error('Failed to save interview.');
-      return;
-    }
+  // ✅ Step 1: Fetch current credits
+  const { data: userData, error: fetchError } = await supabase
+    .from('Users')
+    .select('credits')
+    .eq('email', user?.emailAddresses[0]?.emailAddress)
+    .single();
 
-    toast.success('Interview saved successfully!');
-    onCreateLink(generatedId);
-  };
+  if (fetchError || !userData) {
+    console.error('Error fetching user credits:', fetchError);
+    toast.error('Could not fetch user credits');
+    setSaving(false);
+    return;
+  }
+
+  const updatedCredits = Math.max(userData.credits - 1, 0); // avoid negative credits
+
+  // ✅ Step 2: Update credits
+  const { error: updateError } = await supabase
+    .from('Users')
+    .update({ credits: updatedCredits })
+    .eq('email', user?.emailAddresses[0]?.emailAddress);
+
+  if (updateError) {
+    console.error('Error updating credits:', updateError);
+    toast.error('Failed to update user credits.');
+    setSaving(false);
+    return;
+  }
+
+  toast.success('Interview saved successfully!');
+  setSaving(false);
+  onCreateLink(generatedId);
+};
+
 
   return (
     <div>

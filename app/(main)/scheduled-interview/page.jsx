@@ -13,7 +13,7 @@ function ScheduledInterview() {
   const [loading, setLoading] = useState(true);
 
   const GetInterviewList = async () => {
-    const email = user?.emailAddresses?.[0]?.emailAddress;
+    const email = user?.primaryEmailAddress?.emailAddress;
     if (!email) {
       setLoading(false);
       return;
@@ -30,7 +30,7 @@ function ScheduledInterview() {
         interview_id,
         created_at,
         interview-feedback(userEmail, feedback, created_at)
-      `) // Confirm relation name here!
+      `) // Make sure 'interview-feedback' is the correct relation name
       .eq("email", email)
       .order("created_at", { ascending: false });
 
@@ -44,7 +44,7 @@ function ScheduledInterview() {
   };
 
   useEffect(() => {
-    if (user?.emailAddresses?.[0]?.emailAddress) {
+    if (user?.primaryEmailAddress?.emailAddress) {
       GetInterviewList();
     }
   }, [user]);
@@ -57,7 +57,7 @@ function ScheduledInterview() {
         <p className="text-center text-gray-500 mt-4">Loading interviews...</p>
       )}
 
-      {!loading && interviewList.length === 0 && (
+      {!loading && !interviewList?.length && (
         <div className="p-5 mt-6 flex flex-col items-center gap-4 border rounded-md bg-white">
           <Video className="h-10 w-10 text-primary" />
           <p className="text-gray-700">No interviews scheduled yet.</p>
@@ -67,7 +67,7 @@ function ScheduledInterview() {
         </div>
       )}
 
-      {!loading && interviewList.length > 0 && (
+      {!loading && interviewList?.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
           {interviewList.map((interview) => (
             <InterviewCard
