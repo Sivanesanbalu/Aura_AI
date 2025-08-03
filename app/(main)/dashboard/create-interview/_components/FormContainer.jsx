@@ -16,6 +16,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 function FormContainer({ onHandleInputChange, GoToNext }) {
   const [interviewType, setInterviewType] = useState([]);
+  const [jobPosition, setJobPosition] = useState("");
+  const [duration, setDuration] = useState("");
+
 
   useEffect(() => {
     onHandleInputChange("type", interviewType);
@@ -38,7 +41,11 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
         <Input
           placeholder="e.g. Full Stack Developer"
           className="mt-2"
-          onChange={(event) => onHandleInputChange("jobPosition", event.target.value)} // ✅ fixed key
+          value={jobPosition}
+          onChange={(e) => {
+            setJobPosition(e.target.value);
+            onHandleInputChange("jobPosition", e.target.value);
+          }}
         />
       </div>
 
@@ -56,7 +63,11 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
       <div className="mt-5">
         <h2 className="text-sm font-medium">Interview Duration</h2>
         <Select
-          onValueChange={(value) => onHandleInputChange("duration", value)}
+          onValueChange={(value) => {
+            setDuration(value);
+            onHandleInputChange("duration", value);
+          }}
+          value={duration}
         >
           <SelectTrigger className="w-full mt-2">
             <SelectValue placeholder="Select Duration" />
@@ -77,10 +88,10 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
           {InterviewType.map((type, index) => (
             <div
               key={index}
-              className={`flex items-center cursor-pointer gap-2 p-1 px-4 border border-gray-300 rounded-2xl ${
+              className={`flex items-center cursor-pointer gap-2 p-1 px-4 border border-gray-600 rounded-2xl ${
                 interviewType.includes(type.title)
-                  ? "bg-secondary text-white"
-                  : "bg-white"
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-gray-700"
               }`}
               onClick={() => AddInterviewType(type.title)}
             >
@@ -92,7 +103,10 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
       </div>
 
       <div className="mt-7 flex justify-end">
-        <Button onClick={GoToNext}>
+        <Button
+          onClick={GoToNext}
+          disabled={!jobPosition.trim() || !duration || interviewType.length === 0}
+        >
           Generate Question <ArrowRight />
         </Button>
       </div>

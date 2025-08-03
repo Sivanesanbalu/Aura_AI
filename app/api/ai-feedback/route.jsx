@@ -45,7 +45,7 @@ export async function POST(req) {
       throw new Error("Failed to parse JSON from AI response");
     }
 
-    return NextResponse.json(parsed); // ✅ Correct format
+    return NextResponse.json(parsed); 
 
   } catch (e) {
     console.error("Parsing or API error:", e);

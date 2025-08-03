@@ -12,7 +12,7 @@ export default function Page() {
   const { isSignedIn } = useUser();
   const [darkMode, setDarkMode] = useState(true);
   const [typingText, setTypingText] = useState("");
-  const fullText = "Your future career begins with";
+  const fullText = "Level up with the AIternative track";
 
   const toggleTheme = () => setDarkMode(!darkMode);
 
@@ -58,40 +58,49 @@ export default function Page() {
         </Button>
       </div>
 
-      {/* Welcome Heading */}
-      <motion.h1
-        initial={{ opacity: 0, y: -40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-        className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-transparent bg-clip-text text-center"
-      >
-        Welcome to AI Recruiter
-      </motion.h1>
-
-      {/* Typing Subtext */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 1 }}
-        className={`mt-4 text-lg md:text-2xl font-medium text-center ${
-          darkMode ? "text-gray-300" : "text-gray-700"
+      {/* Boxed Content */}
+      <div
+        className={`mt-12 p-8 rounded-xl shadow-xl max-w-3xl w-full flex flex-col items-center ${
+          darkMode
+            ? "bg-gray-900 border border-gray-700"
+            : "bg-white border border-gray-300"
         }`}
       >
-        {typingText}
-        <span className="animate-pulse">|</span>
-      </motion.p>
+        {/* Welcome Heading */}
+        <motion.h1
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-transparent bg-clip-text text-center"
+        >
+          Welcome to AI Recruiter
+        </motion.h1>
 
-      {/* Lottie Avatar Animation */}
-      <motion.div
-        initial={{ scale: 0.7, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 1.8, duration: 1 }}
-        className="w-72 md:w-96 mt-10"
-      >
-        <Lottie animationData={avatar} loop={true} />
-      </motion.div>
+        {/* Typing Subtext */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 1 }}
+          className={`mt-4 text-lg md:text-2xl font-medium text-center ${
+            darkMode ? "text-gray-300" : "text-gray-700"
+          }`}
+        >
+          {typingText}
+          <span className="animate-pulse">|</span>
+        </motion.p>
 
-      {/* Dashboard Button Below Avatar */}
+        {/* Lottie Avatar Animation */}
+        <motion.div
+          initial={{ scale: 0.7, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 1.8, duration: 1 }}
+          className="w-72 md:w-96 mt-10"
+        >
+          <Lottie animationData={avatar} loop={true} />
+        </motion.div>
+      </div>
+
+      {/* Dashboard Button */}
       {isSignedIn && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -19,9 +19,6 @@ function CreateInterview() {
   const [questionList, setQuestionList] = useState([]);
   const { user } = useUser();
 
-  // Extract credits safely from user object (adjust if your credits are stored differently)
-  const userCredits = user?.publicMetadata?.credits ?? 0;
-
   const onHandleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -31,10 +28,6 @@ function CreateInterview() {
   };
 
   const onGoToNext = () => {
-    if (user !== null && userCredits <= 0) {
-      toast("Please add credits");
-      return;
-    }
     if (!formData?.jobPosition || !formData?.jobDescription || !formData?.duration || !formData?.type) {
       toast('Please enter all details!');
       return;

@@ -3,7 +3,7 @@
 import { InterviewDataContex } from '@/context/InterviewDataContext';
 import { Loader2Icon, Mic, Phone, Timer } from 'lucide-react';
 import Image from 'next/image';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import Vapi from '@vapi-ai/web';
 import AlertConfirmation from './_components/AlertConfirmation';
 import { toast } from 'sonner';
@@ -20,6 +20,9 @@ function StartInterview() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [feedbackGenerated, setFeedbackGenerated] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     if (interviewInfo) startCall();
@@ -65,10 +68,17 @@ function StartInterview() {
     };
 
     vapi.start(assistantOptions);
+
+    // Start timer
+    intervalRef.current = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
   };
 
   const stopInterview = async () => {
     setLoading(true);
+    clearInterval(intervalRef.current); // Stop timer
+
     try {
       await vapi.stop();
       console.log('Call manually stopped.');
@@ -86,8 +96,6 @@ function StartInterview() {
     setFeedbackGenerated(true);
     try {
       const result = await axios.post('/api/ai-feedback', { conversation });
-
-      // The server should return full parsed feedback in `.data`, not `.data.content`
       const feedback = result.data;
 
       const { error } = await supabase.from('interview-feedback').insert([
@@ -96,7 +104,7 @@ function StartInterview() {
           userEmail: interviewInfo?.userEmail,
           interview_id,
           feedback,
-          recommended: false, // Make sure this column exists in Supabase
+          recommended: false,
         },
       ]);
 
@@ -135,6 +143,7 @@ function StartInterview() {
 
     const handleCallEnd = () => {
       toast('Interview ended');
+      clearInterval(intervalRef.current);
       GenerateFeedback();
     };
 
@@ -150,8 +159,39 @@ function StartInterview() {
       vapi.off('Speech-Start', handleSpeechStart);
       vapi.off('Speech-end', handleSpeechEnd);
       vapi.off('call-end', handleCallEnd);
+      clearInterval(intervalRef.current);
     };
   }, []);
+
+  // Tab switch detector
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        setTabSwitchCount((prev) => prev + 1);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (tabSwitchCount > 2) {
+      toast.error('Interview ended due to tab switching.');
+      stopInterview();
+    }
+  }, [tabSwitchCount]);
+
+  // Format seconds to HH:MM:SS
+  const formatTime = (seconds) => {
+    const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
 
   return (
     <div className='p-20 lg:px-48 xl:px-56'>
@@ -159,7 +199,7 @@ function StartInterview() {
         AI Interview Session
         <span className='flex gap-2 items-center'>
           <Timer />
-          00:00:00
+          {formatTime(elapsedTime)}
         </span>
       </h2>
 
@@ -198,7 +238,6 @@ function StartInterview() {
       {/* Controls */}
       <div className='flex items-center gap-5 justify-center mt-3'>
         <Mic className='h-12 w-12 bg-gray-700 text-white rounded-full cursor-pointer' />
-
         <AlertConfirmation stopInterview={stopInterview}>
           {!loading ? (
             <Phone

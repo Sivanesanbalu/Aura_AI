@@ -4,10 +4,10 @@ import React from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './_components/AppSidebar';
 import WelcomeContainer from './dashboard/_components/WelcomeContainer';
-import { useUser } from '@clerk/nextjs'; // ✅ Import the hook
+import { useUser } from '@clerk/nextjs'; 
 
 function DashboardProvider({ children }) {
-  const { user, isSignedIn } = useUser(); // ✅ Use the hook properly here
+  const { user, isSignedIn } = useUser(); 
 
   return (
     <SidebarProvider>

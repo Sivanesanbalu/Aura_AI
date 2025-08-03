@@ -60,12 +60,11 @@ function InterviewDetail() {
     fetchData();
   }, [user, interview_id]);
 
-  // Loading state
+  
   if (loading) {
     return <p className="text-gray-500 text-center mt-5">Loading interview details...</p>;
   }
 
-  // Error or no data state
   if (error || !interviewDetail) {
     return (
       <div className="text-red-600 text-center mt-5">
@@ -74,7 +73,7 @@ function InterviewDetail() {
     );
   }
 
-  // Success
+  
   return (
     <div className="mt-5">
       <h2 className="font-bold text-2xl mb-4">Interview Detail</h2>

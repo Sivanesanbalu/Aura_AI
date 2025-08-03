@@ -111,9 +111,9 @@ function InterviewLink({ interview_id, formData, questionList }) {
             <ArrowLeft size={16} /> Back to Dashboard
           </button>
         </Link>
-        <Link href="/create-interview">
+        <Link href={`/interview/${interview_id}`}>
           <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">
-            <Plus size={16} /> Create New Interview
+            <Plus size={16} /> Connect
           </button>
         </Link>
       </div>

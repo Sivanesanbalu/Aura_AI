@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { supabase } from "@/app/components/supabaseClient";
 import { Button } from "@/components/ui/button";
-import { Video } from "lucide-react";
+import { Video, RefreshCcw } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import InterviewCard from "./InterviewCard";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ function LatestInterviewsList() {
       .select("*")
       .eq("email", email)
       .order("created_at", { ascending: false })
-      .limit(6)
+      .limit(6);
 
     if (error) {
       toast.error("❌ Error fetching interviews.");
@@ -48,27 +48,45 @@ function LatestInterviewsList() {
         <h2 className="font-bold text-2xl">Previously Created Interviews</h2>
         {!loading && (
           <Button variant="outline" onClick={fetchInterviews}>
+            <RefreshCcw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         )}
       </div>
 
       {loading ? (
-        <p className="mt-6 text-center text-gray-500 animate-pulse">
-          Loading interviews...
-        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-40 bg-gray-100 rounded-lg animate-pulse p-4 space-y-3"
+            >
+              <div className="h-5 bg-gray-300 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-full"></div>
+            </div>
+          ))}
+        </div>
       ) : interviewList.length === 0 ? (
-        <div className="p-5 mt-6 flex flex-col items-center gap-4 border rounded-md bg-white">
-          <Video className="h-10 w-10 text-primary" />
-          <p className="text-gray-700">You don't have any interviews yet.</p>
+        <div className="p-6 mt-6 text-center border rounded-md bg-white">
+          <Video className="h-10 w-10 mx-auto text-primary mb-4" />
+          <h3 className="font-semibold text-lg mb-2">No Interviews Yet</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            You haven’t created any interviews yet. Get started now.
+          </p>
           <Button onClick={() => (window.location.href = "/interview/create")}>
-            Create New Interview
+            ➕ Create New Interview
           </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
           {interviewList.map((interview) => (
-            <InterviewCard key={interview.id} interview={interview} />
+            <div
+              key={interview.id}
+              className="transition-transform hover:scale-[1.01] hover:shadow-md"
+            >
+              <InterviewCard interview={interview} />
+            </div>
           ))}
         </div>
       )}

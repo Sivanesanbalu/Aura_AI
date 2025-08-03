@@ -33,7 +33,7 @@ function CandidaList({ candidateList }) {
 
           {/* Right section: Score + Button */}
           <div className="flex items-center gap-4">
-            <h2 className="text-green-600 font-semibold text-sm">6/10</h2>
+            <h2 className="text-green-600 font-semibold text-sm"></h2>
             
             <CandidateFeedbackDialog candidate={candidate}/>
           </div>
