@@ -13,7 +13,8 @@ import axios from 'axios';
 
 function StartInterview() {
   const { interviewInfo } = useContext(InterviewDataContex);
-  const vapi = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY);
+  const vapiRef = useRef(null); // Persistent Vapi instance
+
   const [activeUser, setActiveUser] = useState(false);
   const [conversation, setConversation] = useState();
   const [loading, setLoading] = useState(false);
@@ -21,22 +22,39 @@ function StartInterview() {
   const [facesDetected, setFacesDetected] = useState(0);
   const [faceWarning, setFaceWarning] = useState('');
   const [detectionReady, setDetectionReady] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
-  const { interview_id } = useParams();
-  const router = useRouter();
-
+  const timerRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const streamRef = useRef(null);
 
+  const { interview_id } = useParams();
+  const router = useRouter();
+
+  const formatTime = (seconds) => {
+    const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    const secs = String(seconds % 60).padStart(2, '0');
+    return `${hrs}:${mins}:${secs}`;
+  };
+
   // === Start Voice Call ===
   useEffect(() => {
+    if (!vapiRef.current) {
+      vapiRef.current = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY);
+    }
     if (interviewInfo) startCall();
+    return () => {
+      cleanupVapi();
+    };
   }, [interviewInfo]);
 
   const startCall = () => {
-    const questionList = interviewInfo?.interviewData?.questionList?.map(q => q.question).join(', ');
+    const questionList = interviewInfo?.interviewData?.questionList
+      ?.map((q) => q.question)
+      .join(', ');
 
     const assistantOptions = {
       name: 'AI Recruiter',
@@ -49,42 +67,31 @@ function StartInterview() {
         messages: [
           {
             role: 'system',
-           content: `
-          You are an AI voice assistant conducting technical interviews for a React developer position.
-
-          Start with a friendly introduction like:
-          "Hey there! Welcome to your ${interviewInfo?.interviewData?.jobPosition} interview. Let’s get started with a few questions!"
-
-          Ask the following questions one at a time, listening carefully after each response:
-          Questions: ${questionList}
-
-          For each answer Give a short, friendly response Provide one of the following types of feedback based on their answer quality:
-             **Positive** – if the answer is technically correct and confident  
-            **Medium/Neutral** – if the answer is partially correct or lacks clarity  
-            **Negative** – if the answer is incorrect, vague, or completely off-topic  
-          - Offer a hint or guidance if the answer is weak or stuck
-
-          After 1-10 questions:
-          - Summarize the candidate’s overall performance using the same categories (positive, neutral, or negative)
-          - Be constructive: encourage improvement even for weak performance
-          - End politely: "Thanks for your time and effort today! Best of luck moving forward."
-
-          Maintain a friendly, supportive tone throughout.
-          Focus on evaluating their **React knowledge** clearly and fairly.
-          `.trim(),
-
+            content: `
+              You are an AI voice assistant conducting interviews.
+              Begin with a friendly introduction like:
+              "Hey there! Welcome to your ${interviewInfo?.interviewData?.jobPosition} interview. Let’s get started with a few questions!"
+              Ask the following questions one by one, listening after each:
+              Questions: ${questionList}
+              Give hints if needed, respond naturally, and offer feedback.
+              After 5-7 questions, summarize their performance positively.
+              End by thanking them and wishing good luck.
+              Stay engaging, friendly, and focused on React.
+            `.trim(),
           },
         ],
       },
     };
 
-    vapi.start(assistantOptions);
+    vapiRef.current.start(assistantOptions);
   };
 
+  // === Stop Interview ===
   const stopInterview = async () => {
     setLoading(true);
     try {
-      await vapi.stop();
+      cleanupVapi();
+      if (timerRef.current) clearInterval(timerRef.current);
       await GenerateFeedback();
     } catch (err) {
       console.error('Error stopping interview:', err);
@@ -94,10 +101,28 @@ function StartInterview() {
     }
   };
 
+  // === Full Cleanup for Vapi & Streams ===
+  const cleanupVapi = () => {
+    if (vapiRef.current) {
+      try {
+        vapiRef.current.stop();
+        vapiRef.current.disconnect();
+      } catch (err) {
+        console.error('Error cleaning Vapi:', err);
+      }
+      vapiRef.current = null;
+    }
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+    }
+  };
+
+  // === Generate Feedback ===
   const GenerateFeedback = async () => {
     if (feedbackGenerated || !conversation) return;
     setFeedbackGenerated(true);
-
     try {
       const result = await axios.post('/api/ai-feedback', { conversation });
       const feedback = result.data;
@@ -120,39 +145,53 @@ function StartInterview() {
         router.replace(`/interview/${interview_id}/completed`);
       }
     } catch (err) {
-      console.error('Feedback error:', err);
+      console.error('Feedback generation error:', err);
       toast.error('Failed to generate feedback');
     }
   };
 
   // === Handle Vapi Events ===
   useEffect(() => {
+    if (!vapiRef.current) return;
+
     const handleMessage = (message) => {
       if (message?.conversation) {
-        setConversation(JSON.stringify(message.conversation));
+        const convoString = JSON.stringify(message.conversation);
+        setConversation(convoString);
       }
     };
 
-    const handleCallStart = () => toast('Call Connected...');
+    const handleCallStart = () => {
+      toast('Call Connected...');
+      setElapsedTime(0);
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    };
+
     const handleSpeechStart = () => setActiveUser(false);
     const handleSpeechEnd = () => setActiveUser(true);
+
     const handleCallEnd = () => {
       toast('Interview ended');
+      cleanupVapi();
       GenerateFeedback();
     };
 
-    vapi.on('message', handleMessage);
-    vapi.on('call-start', handleCallStart);
-    vapi.on('Speech-Start', handleSpeechStart);
-    vapi.on('Speech-end', handleSpeechEnd);
-    vapi.on('call-end', handleCallEnd);
+    vapiRef.current.on('message', handleMessage);
+    vapiRef.current.on('call-start', handleCallStart);
+    vapiRef.current.on('Speech-Start', handleSpeechStart);
+    vapiRef.current.on('Speech-end', handleSpeechEnd);
+    vapiRef.current.on('call-end', handleCallEnd);
 
     return () => {
-      vapi.off('message', handleMessage);
-      vapi.off('call-start', handleCallStart);
-      vapi.off('Speech-Start', handleSpeechStart);
-      vapi.off('Speech-end', handleSpeechEnd);
-      vapi.off('call-end', handleCallEnd);
+      if (vapiRef.current) {
+        vapiRef.current.off('message', handleMessage);
+        vapiRef.current.off('call-start', handleCallStart);
+        vapiRef.current.off('Speech-Start', handleSpeechStart);
+        vapiRef.current.off('Speech-end', handleSpeechEnd);
+        vapiRef.current.off('call-end', handleCallEnd);
+      }
     };
   }, []);
 
@@ -185,12 +224,12 @@ function StartInterview() {
 
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
             ctx.lineWidth = 3;
+            ctx.strokeStyle = 'red';
 
             if (predictions.length === 1) {
               const pred = predictions[0];
               const [x, y] = pred.topLeft;
               const [x2, y2] = pred.bottomRight;
-              ctx.strokeStyle = 'green';
               ctx.strokeRect(x, y, x2 - x, y2 - y);
 
               const [rightEye, leftEye, nose] = pred.landmarks;
@@ -223,10 +262,7 @@ function StartInterview() {
     loadModelAndDetect();
 
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
+      cleanupVapi();
     };
   }, []);
 
@@ -236,12 +272,11 @@ function StartInterview() {
         AI Interview Session
         <span className='flex gap-2 items-center'>
           <Timer />
-          00:00:00
+          {formatTime(elapsedTime)}
         </span>
       </h2>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-7'>
-        {/* AI Recruiter */}
         <div className='bg-white h-[400px] rounded-lg border flex flex-col gap-3 items-center justify-center mt-5'>
           <div className='relative'>
             {!activeUser && <span className='absolute inset-0 rounded-full bg-blue-500 opacity-75 animate-ping'></span>}
@@ -250,21 +285,17 @@ function StartInterview() {
           <h2>AI Recruiter</h2>
         </div>
 
-        {/* Candidate Face Detection */}
         <div className='bg-white h-[400px] rounded-lg border flex flex-col gap-3 items-center justify-center mt-5 relative overflow-hidden'>
           <h2>{interviewInfo?.userName}</h2>
           <div className='relative w-full flex justify-center mt-2' style={{ height: 250 }}>
             <video ref={videoRef} muted playsInline className='absolute top-0 left-0 w-full h-full object-cover rounded-md' />
             <canvas ref={canvasRef} className='absolute top-0 left-0 w-full h-full rounded-md pointer-events-none' />
           </div>
-          <p className={`text-sm text-center font-medium ${faceWarning.includes('✅') ? 'text-green-600' : 'text-red-600'}`}>
-            {faceWarning}
-          </p>
           <p className='text-sm mt-2 text-gray-500'>Faces detected: {facesDetected}</p>
+          <p className='text-sm text-center font-medium'>{faceWarning}</p>
         </div>
       </div>
 
-      {/* Controls */}
       <div className='flex items-center gap-5 justify-center mt-3'>
         <Mic className='h-12 w-12 bg-gray-700 text-white rounded-full cursor-pointer' />
         <AlertConfirmation stopInterview={stopInterview}>
