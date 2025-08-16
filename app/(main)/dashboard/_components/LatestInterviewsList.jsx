@@ -3,93 +3,157 @@
 import { useUser } from "@clerk/nextjs";
 import { supabase } from "@/app/components/supabaseClient";
 import { Button } from "@/components/ui/button";
-import { Video, RefreshCcw } from "lucide-react";
+import { Video, RefreshCcw, PlusCircle, Sparkles } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import InterviewCard from "./InterviewCard";
+import InterviewCard from "./InterviewCard"; // Assuming this is a well-styled component
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
-function LatestInterviewsList() {
+
+const InterviewSkeletonCard = () => (
+    <div className="rounded-2xl p-6 bg-gradient-to-br from-slate-900 to-slate-900 border border-slate-700 animate-pulse shadow-2xl shadow-slate-950/50">
+        <div className="flex justify-between items-start">
+            <div className="h-7 w-32 rounded-full bg-slate-900"></div>
+            <div className="h-7 w-24 rounded-full bg-slate-900"></div>
+        </div>
+        <div className="my-7 space-y-4">
+            <div className="h-5 w-40 rounded-full bg-slate-900"></div>
+            <div className="h-4 w-48 rounded-full bg-slate-900"></div>
+            <div className="h-4 w-36 rounded-full bg-slate-900"></div>
+        </div>
+        <div className="mt-auto pt-5 border-t border-slate-900">
+            <div className="flex gap-4">
+                <div className="h-10 w-full rounded-lg bg-slate-900"></div>
+                <div className="h-10 w-full rounded-lg bg-slate-900"></div>
+            </div>
+        </div>
+    </div>
+);
+
+
+function LatestInterviewsList({ darkMode = true }) {
   const { user } = useUser();
   const [interviewList, setInterviewList] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  
   const fetchInterviews = async () => {
     const email = user?.emailAddresses?.[0]?.emailAddress;
     if (!email) return;
-
     setLoading(true);
-
-    const { data, error } = await supabase
-      .from("interview")
-      .select("*")
-      .eq("email", email)
-      .order("created_at", { ascending: false })
-      .limit(6);
-
-    if (error) {
-      toast.error("❌ Error fetching interviews.");
-      console.error("Supabase error:", error);
-    } else {
-      setInterviewList(data || []);
+    try {
+        const { data, error } = await supabase
+            .from("interview")
+            .select("*")
+            .eq("email", email)
+            .order("created_at", { ascending: false })
+            .limit(6);
+        if (error) { throw error; }
+        setInterviewList(data || []);
+    } catch (error) {
+        toast.error("❌ Failed to fetch your interviews. Please try again.");
+    } finally {
+        setLoading(false);
     }
-
-    setLoading(false);
   };
 
   useEffect(() => {
     if (user?.emailAddresses?.[0]?.emailAddress) {
-      fetchInterviews();
+        fetchInterviews();
     }
   }, [user]);
 
+
+  const listVariant = {
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15, delayChildren: 0.1 }
+    },
+    hidden: { opacity: 0 }
+  };
+
+  const itemVariant = {
+    visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 100 } },
+    hidden: { opacity: 0, y: 30, scale: 0.95 }
+  };
+
   return (
-    <div className="my-5">
-      <div className="flex justify-between items-center">
-        <h2 className="font-bold text-2xl">Previously Created Interviews</h2>
+    <div className="my-10">
+      {/* --- HEADER --- */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="flex justify-between items-center mb-8"
+      >
+        <h2 className="font-bold text-3xl dark:text-slate-200">
+          Recent Interviews
+        </h2>
         {!loading && (
-          <Button variant="outline" onClick={fetchInterviews}>
+          <Button 
+            variant="outline" 
+            onClick={fetchInterviews}
+            className="transition-all duration-300 bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-500 hover:scale-105 active:scale-95"
+          >
             <RefreshCcw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         )}
-      </div>
+      </motion.div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-40 bg-gray-100 rounded-lg animate-pulse p-4 space-y-3"
+      {/* --- CONDITIONAL RENDERING --- */}
+      <AnimatePresence>
+        {loading ? (
+          <motion.div 
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
+          >
+            {Array.from({ length: 3 }).map((_, i) => (
+              <InterviewSkeletonCard key={i} />
+            ))}
+          </motion.div>
+        ) : interviewList.length === 0 ? (
+          <motion.div 
+            key="empty"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="p-12 mt-8 text-center border-2 border-dashed rounded-3xl border-slate-700 bg-slate-800/20"
+          >
+             <Sparkles className="h-16 w-16 mx-auto mb-5 text-yellow-400" strokeWidth={1}/>
+            <h3 className="font-bold text-2xl mb-3 text-white">
+              Start Your Interview Journey!
+            </h3>
+            <p className="text-md mb-8 text-slate-400 max-w-sm mx-auto">
+              You haven't conducted any interviews yet. Create one now to get started with our AI-powered platform.
+            </p>
+            <Button 
+              onClick={() => (window.location.href = "/dashboard/create-interview")}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-md py-3 px-6 rounded-full shadow-lg shadow-blue-500/30 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1"
             >
-              <div className="h-5 bg-gray-300 rounded w-1/2"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-full"></div>
-            </div>
-          ))}
-        </div>
-      ) : interviewList.length === 0 ? (
-        <div className="p-6 mt-6 text-center border rounded-md bg-white">
-          <Video className="h-10 w-10 mx-auto text-primary mb-4" />
-          <h3 className="font-semibold text-lg mb-2">No Interviews Yet</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            You haven’t created any interviews yet. Get started now.
-          </p>
-          <Button onClick={() => (window.location.href = "/interview/create")}>
-            ➕ Create New Interview
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
-          {interviewList.map((interview) => (
-            <div
-              key={interview.id}
-              className="transition-transform hover:scale-[1.01] hover:shadow-md"
-            >
-              <InterviewCard interview={interview} />
-            </div>
-          ))}
-        </div>
-      )}
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Create New Interview
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="list"
+            variants={listVariant}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
+          >
+            {interviewList.map((interview) => (
+              <motion.div key={interview.id} variants={itemVariant}>
+                <InterviewCard interview={interview} darkMode={darkMode}/>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

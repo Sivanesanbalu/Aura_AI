@@ -12,7 +12,7 @@ export async function POST(req) {
     } catch {
       convoData = conversation;
     }
-
+    
     const FINAL_PROMPT = FEEDBACK_PROMPT.replace('{{conversation}}', JSON.stringify(convoData));
 
     const openai = new OpenAI({

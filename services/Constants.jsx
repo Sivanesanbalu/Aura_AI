@@ -11,6 +11,7 @@ export const SideBarOptions = [
     icon: Calendar,
     path: '/scheduled-interview',
   },
+  
   {
     name: 'All Interview',
     icon: List,

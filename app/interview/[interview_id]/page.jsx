@@ -34,15 +34,15 @@ function Interview() {
         .select('jobPosition, jobDescription, duration, type')
         .eq('interview_id', interview_id);
 
-      if (!Interviews || Interviews.length === 0) {
-        toast('Incorrect Interview Link');
+      if (error || !Interviews || Interviews.length === 0) {
+        toast.error('Invalid or expired interview link.');
+        router.push('/');
         setLoading(false);
         return;
       }
-
       setInterviewData(Interviews[0]);
     } catch (e) {
-      toast('Something went wrong while fetching interview data');
+      toast.error('Something went wrong while fetching interview data');
     } finally {
       setLoading(false);
     }
@@ -52,11 +52,10 @@ function Interview() {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const onJoinInterview = async () => {
-    if (!userName || !isValidEmail(userEmail)) {
-      toast('Please enter valid name and email');
+    if (!userName.trim() || !isValidEmail(userEmail)) {
+      toast.error('Please enter a valid name and email address.');
       return;
     }
-
     setLoading(true);
     try {
       let { data: Interviews, error } = await supabase
@@ -70,88 +69,110 @@ function Interview() {
           userEmail,
           interviewData: Interviews[0]
         });
-
         router.push(`/interview/${interview_id}/start`);
       } else {
-        toast('Invalid Interview ID');
+        toast.error('Invalid Interview ID');
       }
     } catch (e) {
-      toast('Failed to join interview');
+      toast.error('Failed to join the interview. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className='flex flex-col items-center justify-center border rounded-lg bg-white-200 p-7 lg:px-33 xl:px-52 mb-1'>
-
+    <div className='relative min-h-screen flex flex-col items-center justify-center bg-gray-950 p-4 overflow-hidden'>
+      {/* Animated Aurora Background Blobs */}
+      <div className="absolute top-0 left-0 w-full h-full z-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-600/50 rounded-full filter blur-3xl opacity-40 animate-[blob-spin_12s_ease-in-out_infinite]"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/50 rounded-full filter blur-3xl opacity-40 animate-[blob-spin_15s_ease-in-out_infinite_reverse]"></div>
+      </div>
       
-
-     <div className="flex flex-col items-center justify-center border rounded-lg bg-gray-100 p-7 lg:px-33 xl:px-52 mb-1">
-        <h2 className="mt-1 text-center text-xl font-bold text-gray-800">
-            AI-Powered Interview Platform
+      {/* The Main "Glass" Card */}
+      <div className="relative z-10 w-full max-w-2xl flex flex-col items-center justify-center 
+        bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/40 p-8">
+        
+        <h2 className="text-center text-2xl font-bold text-gray-100 tracking-wide">
+          AI Interview Platform
         </h2>
 
-        {/* Only one image inside box */}
         <Image
           src='/interview.png'
           alt='interview'
           width={500}
           height={500}
-          className='w-[150px] my-6'
+          className='w-[140px] my-6 drop-shadow-lg'
         />
 
-        {!interviewData ? (
-          <p className='text-gray-500'>Loading interview details...</p>
-        ) : (
-          <>
-            <h2 className='font-bold text-xl mt-3'>{interviewData.jobPosition}</h2>
-            <h2 className='flex gap-2 items-center text-gray-500 mt-2'>
-              <Clock className='h-4 w-4' /> {interviewData.duration}
-            </h2>
-          </>
-        )}
+        <div className="text-center h-20"> {/* Fixed height to prevent layout shift */}
+          {!interviewData ? (
+            <div className='flex flex-col items-center justify-center gap-4'>
+              <Loader2Icon className='animate-spin text-cyan-300 h-8 w-8'/>
+              <p className='text-gray-300'>Connecting to interview...</p>
+            </div>
+          ) : (
+            <>
+              <h2 className='font-bold text-3xl text-white drop-shadow-md'>{interviewData.jobPosition}</h2>
+              <div className='flex gap-2 items-center justify-center text-gray-300 mt-3'>
+                <Clock className='h-5 w-5' /> 
+                <span>{interviewData.duration} Session</span>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Form Fields */}
-        <div className='w-full mt-5'>
-          <h2>Enter your full name</h2>
-          <Input
-            placeholder='e.g. Sivanesan'
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-          />
-        </div>
-        <div className='w-full mt-3'>
-          <h2>Enter your Email</h2>
-          <Input
-            placeholder='e.g. sivanesan@gmail.com'
-            value={userEmail}
-            onChange={(e) => setUserEmail(e.target.value)}
-          />
+        <div className='w-full mt-6 space-y-4'>
+          <div>
+            <label className='text-gray-200 font-medium mb-2 block'>Your Full Name</label>
+            <Input
+              placeholder='Enter your name...'
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              className="bg-black/20 border-white/20 text-white placeholder:text-gray-400 rounded-lg focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400 transition-all"
+            />
+          </div>
+          <div>
+            <label className='text-gray-200 font-medium mb-2 block'>Your Email Address</label>
+            <Input
+              type="email"
+              placeholder='Enter your email...'
+              value={userEmail}
+              onChange={(e) => setUserEmail(e.target.value)}
+              className="bg-black/20 border-white/20 text-white placeholder:text-gray-400 rounded-lg focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400 transition-all"
+            />
+          </div>
         </div>
 
         {/* Tips Section */}
-        <div className='p-3 bg-blue-100 flex gap-4 rounded-lg mt-4'>
-          <Info className='text-primary' />
+        <div className='p-4 bg-black/10 border border-cyan-400/20 flex gap-4 rounded-lg mt-8 w-full'>
+          <Info className='text-cyan-300 h-6 w-6 flex-shrink-0 mt-1' />
           <div>
-            <h2 className='font-bold'>Before you begin</h2>
-            <ul className='text-sm text-primary list-disc ml-5 mt-1'>
-              <li>Test your camera and microphone</li>
-              <li>Ensure you have a stable internet connection</li>
-              <li>Find a quiet place for the interview</li>
+            <h2 className='font-bold text-cyan-200'>Quick Checklist</h2>
+            <ul className='text-sm text-gray-300 list-disc ml-5 mt-2 space-y-1'>
+              <li>Check that your camera and microphone are enabled.</li>
+              <li>Ensure you have a stable internet connection.</li>
+              <li>Find a quiet, distraction-free environment.</li>
             </ul>
           </div>
         </div>
 
         {/* Join Button */}
         <Button
-          className='mt-5 w-full font-bold'
-          disabled={loading || !userName || !userEmail}
+          className='mt-8 w-full font-bold text-lg py-6 rounded-lg 
+            bg-gradient-to-r from-cyan-500 to-purple-600 text-white
+            hover:shadow-lg hover:shadow-cyan-500/40 
+            transform hover:-translate-y-1 transition-all duration-300 ease-in-out
+            disabled:opacity-50 disabled:cursor-not-allowed'
+          disabled={loading || !userName || !isValidEmail(userEmail)}
           onClick={onJoinInterview}
         >
-          <Video className='mr-2' />
-          {loading && <Loader2Icon className='animate-spin mr-2' />}
-          Join Interview
+          {loading ? (
+            <Loader2Icon className='animate-spin mr-2 h-6 w-6' />
+          ) : (
+            <Video className='mr-2 h-6 w-6' />
+          )}
+          Join Secure Interview
         </Button>
       </div>
     </div>

@@ -1,29 +1,51 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
-export const QUESTION_PROMPT = `You are an expert technical interviewer.
-Based on the following inputs, generate a well-structured list of high-quality interview questions
+export const QUESTION_PROMPT = `You are a Principal Engineer and a seasoned Hiring Manager at a FAANG-level company (like Google, Amazon). Your standards are exceptionally high, and you are tasked with creating a comprehensive and balanced interview question set.
 
-Job Title: {{jobTitle}}
-Job Description: {{jobDescription}}
-Interview Duration: {{duration}}
-Interview Type: {{type}}
+Based on the following inputs, generate a world-class interview question plan.
 
-📝 Your task:
-Analyze the job description to identify key responsibilities, required skills, and expected experience
-Generate a list of interview questions depends on interview duration
-Adjust the number and depth of questions to match the interview duration.
-Ensure the questions match the tone and structure of a real-life {{type}} interview.
-🌿 Format your response in JSON format with array list of questions
-format: interviewQuestions=[
-  {
-    question:"",
-    type:"Technical" | "Behavioral" | "Experience" | "Problem Solving" | "Leadership"
-  },
-  ...
-]
+**Job Title:** {{jobTitle}}
+**Job Description:** {{jobDescription}}
+**Interview Duration:** {{duration}}
+**Interview Type:** {{type}}
 
-🔴 The goal is to create a structured, relevant, and time-optimized interview plan for a {{jobTitle}} role.`;
+---
+**Your CRITICAL Directives:**
+
+1.  **Structure as an Interview Funnel:** The question set MUST follow a logical progression.
+    *   **Start Broad (Foundational):** Begin with 1-2 foundational questions to verify the candidate's core understanding of essential concepts. Questions like "What is the difference between X and Y?" are appropriate here to establish a baseline.
+    *   **Go Deeper (Applied Knowledge):** Transition into more complex, open-ended questions that require practical application, code analysis, or design thinking.
+    *   **Assess Behavior:** Weave in behavioral questions to understand their past experiences and impact.
+
+2.  **Balance Depth with Fundamentals:** While the main goal is to assess deep problem-solving skills, you must include a few foundational checks. This ensures the candidate isn't just reciting memorized answers to complex problems without understanding the basics.
+
+3.  **Incorporate Practical Code Logic:** Where relevant to the role, generate questions that require the candidate to **write, analyze, or debug a small code snippet.** This is crucial for testing the practical application of their theoretical knowledge (e.g., "What is the output of this code and why?", "Find the bug in this function.", "Write a function to...").
+
+4.  **Demand Problem-Solving, Not Just Knowledge:** For technical roles, generate complex algorithmic or system design questions with multiple valid approaches. The focus should be on the candidate's thought process, their ability to discuss trade-offs (scalability, performance, maintainability), and how they navigate ambiguity.
+
+5.  **Drill Down on Behavioral Impact (STAR Method):** Behavioral questions must be framed to elicit detailed stories. They should force the candidate to articulate the **S**ituation, **T**ask, **A**ction, and measurable **R**esult. Probe for ownership, impact, and how they handled complex situations or failures.
+
+6.  **Time-Optimize Ruthlessly:** Adjust the number and complexity of questions to realistically fit the interview duration. A 30-minute interview might have one foundational, one code logic, and one behavioral question. A 60-minute interview can accommodate a larger system design problem.
+
+---
+**Output Format (Strict):**
+You MUST respond in a clean JSON format. The root object should contain a single key, "interviewQuestions", which is an array of question objects.
+
+**JSON Schema:**
+\`\`\`json
+{
+  "interviewQuestions": [
+    {
+      "question": "A very specific and challenging question text.",
+      "type": "Foundational" | "Problem Solving" | "System Design" | "Behavioral" | "Code Logic"
+    }
+  ]
+}
+\`\`\`
+---
+
+**Primary Goal:** Create a challenging, insightful, and **balanced** interview plan that a real hiring manager at Google or Amazon would use to identify top-tier talent for the **{{jobTitle}}** role.`;
 
 export async function POST(req) {
   const { jobPosition, jobDescription, duration, type } = await req.json();
@@ -41,7 +63,7 @@ export async function POST(req) {
     });
 
     const completion = await openai.chat.completions.create({
-      model: 'mistralai/mistral-small-3.2-24b-instruct:free',
+      model: 'google/gemma-3n-e2b-it:free',
       messages: [
         {
           role: 'user',

@@ -5,7 +5,6 @@ import { Loader2Icon, Mic, Phone, Timer } from 'lucide-react';
 import Image from 'next/image';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import Vapi from '@vapi-ai/web';
-import AlertConfirmation from './_components/AlertConfirmation';
 import { toast } from 'sonner';
 import { supabase } from '@/app/components/supabaseClient';
 import { useParams, useRouter } from 'next/navigation';
@@ -13,7 +12,7 @@ import axios from 'axios';
 
 function StartInterview() {
   const { interviewInfo } = useContext(InterviewDataContex);
-  const vapiRef = useRef(null); // Persistent Vapi instance
+  const vapiRef = useRef(null); 
 
   const [activeUser, setActiveUser] = useState(false);
   const [conversation, setConversation] = useState();
@@ -23,6 +22,11 @@ function StartInterview() {
   const [faceWarning, setFaceWarning] = useState('');
   const [detectionReady, setDetectionReady] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // --- MODIFICATION START ---
+  // Added a state to act as a lock, preventing the stopInterview function from running multiple times.
+  const [isStopping, setIsStopping] = useState(false);
+  // --- MODIFICATION END ---
 
   const timerRef = useRef(null);
   const videoRef = useRef(null);
@@ -32,6 +36,7 @@ function StartInterview() {
 
   const { interview_id } = useParams();
   const router = useRouter();
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
 
   const formatTime = (seconds) => {
     const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
@@ -40,7 +45,34 @@ function StartInterview() {
     return `${hrs}:${mins}:${secs}`;
   };
 
-  // === Start Voice Call ===
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitchCount((prev) => {
+          const newCount = prev + 1;
+
+          if (newCount < 4) {
+            toast.warning(` You switched tabs (${newCount}/3). Please stay focused.`);
+          } else {
+            toast.error(' You have switched tabs too many times. Interview will now end.');
+            stopInterview(); 
+          }
+
+          return newCount;
+        });
+      } else {
+        toast('✅ Welcome back to the interview tab.');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+
   useEffect(() => {
     if (!vapiRef.current) {
       vapiRef.current = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY);
@@ -58,25 +90,41 @@ function StartInterview() {
 
     const assistantOptions = {
       name: 'AI Recruiter',
-      firstMessage: `Hi ${interviewInfo?.userName}, how are you? Ready for your interview on ${interviewInfo?.interviewData?.jobPosition}?`,
+      firstMessage: `Hi ${interviewInfo?.userName}. My name is Jennifer, and I'll be conducting your technical interview today for the ${interviewInfo?.interviewData?.jobPosition} position. Are you ready to begin?`,
       transcriber: { provider: 'deepgram', model: 'nova-2', language: 'en-US' },
       voice: { provider: 'playht', voiceId: 'jennifer' },
       model: {
         provider: 'openai',
-        model: 'gpt-4',
+        model: 'gpt-4', 
         messages: [
           {
             role: 'system',
             content: `
-              You are an AI voice assistant conducting interviews.
-              Begin with a friendly introduction like:
-              "Hey there! Welcome to your ${interviewInfo?.interviewData?.jobPosition} interview. Let’s get started with a few questions!"
-              Ask the following questions one by one, listening after each:
-              Questions: ${questionList}
-              Give hints if needed, respond naturally, and offer feedback.
-              After 5-7 questions, summarize their performance positively.
-              End by thanking them and wishing good luck.
-              Stay engaging, friendly, and focused on React.
+              You are a Senior Technical Interviewer and Hiring Manager at a top-tier tech company like Google or Amazon. Your standards are extremely high. Your primary goal is not just to ask questions, but to deeply evaluate the candidate's problem-solving skills, technical depth, and communication abilities for the **${interviewInfo?.interviewData?.jobPosition}** role.
+
+              **Core Task:**
+              You will conduct this interview by asking the following questions from the provided list, one by one. **Do not move to the next question until you have thoroughly probed the candidate's response.**
+
+              **Core Questions to Ask:**
+              ${questionList}
+
+              ---
+
+              **Your Rules of Engagement (CRITICAL):**
+
+              1.  **Probe with Follow-Up Questions:** For EVERY answer, you **must** ask one or two deep follow-up questions. Your goal is to uncover their reasoning. Never just accept a surface-level answer.
+                  *   Use questions like: "Can you elaborate on why you chose that specific approach?", "What were the trade-offs you considered?", "How would that solution perform at scale?", "What alternatives did you think about and why did you discard them?".
+
+              2.  **Enforce the STAR Method for Behavioral Questions:** For any question that starts with "Describe a time..." or "Tell me about a project...", you must listen for the STAR method (Situation, Task, Action, Result). If the candidate is vague, probe for specifics.
+                  *   If they don't describe the situation, ask: "What was the context for this project?"
+                  *   If they are unclear on their role, ask: "What were you specifically responsible for?"
+                  *   If they don't mention the outcome, ask: "What was the measurable outcome or impact of your work?"
+
+              3.  **Maintain a Professional Tone:** You are an expert, not just a friendly assistant. Be courteous, focused, and objective. Your tone should be that of a senior engineer evaluating a potential colleague.
+
+              4.  **Do Not Give Hints or Answers:** Unlike a casual chat, you must not provide solutions. If a candidate is stuck, you can ask a guiding question like, "What's the first thing you might consider here?" or "Can you break the problem down into smaller pieces?", but never give away the answer.
+
+              5.  **Professional Closing:** When the questions are complete, do not give an immediate performance summary. End the interview professionally. Say something like: "Alright, that's all the questions I have for you. Thank you for your time today. Our recruiting team will be in touch with you regarding the next steps." Then, end the call.
             `.trim(),
           },
         ],
@@ -86,9 +134,16 @@ function StartInterview() {
     vapiRef.current.start(assistantOptions);
   };
 
-  // === Stop Interview ===
+  // --- MODIFICATION START ---
+  // The stopInterview function is now guarded by the `isStopping` state.
   const stopInterview = async () => {
+    // If the stopping process has already begun, exit immediately to prevent a race condition.
+    if (isStopping) return; 
+    
+    setIsStopping(true); // Set the lock
     setLoading(true);
+    toast('Ending interview...');
+
     try {
       cleanupVapi();
       if (timerRef.current) clearInterval(timerRef.current);
@@ -96,17 +151,19 @@ function StartInterview() {
     } catch (err) {
       console.error('Error stopping interview:', err);
       toast.error('Failed to stop interview');
-    } finally {
       setLoading(false);
+      setIsStopping(false); // Release the lock if an error occurs to allow a retry.
     }
   };
+  // --- MODIFICATION END ---
 
-  // === Full Cleanup for Vapi & Streams ===
+  // --- MODIFICATION START ---
+  // The cleanup function is simplified. `vapi.stop()` is the correct method to end
+  // the session. `disconnect()` is often redundant and can cause issues if called immediately after.
   const cleanupVapi = () => {
     if (vapiRef.current) {
       try {
         vapiRef.current.stop();
-        vapiRef.current.disconnect();
       } catch (err) {
         console.error('Error cleaning Vapi:', err);
       }
@@ -118,10 +175,13 @@ function StartInterview() {
       streamRef.current.getTracks().forEach((t) => t.stop());
     }
   };
+  // --- MODIFICATION END ---
 
-  // === Generate Feedback ===
   const GenerateFeedback = async () => {
-    if (feedbackGenerated || !conversation) return;
+    if (feedbackGenerated || !conversation) {
+      router.replace(`/interview/${interview_id}/completed`);
+      return;
+    };
     setFeedbackGenerated(true);
     try {
       const result = await axios.post('/api/ai-feedback', { conversation });
@@ -142,15 +202,15 @@ function StartInterview() {
         toast.error('Failed to save feedback');
       } else {
         toast.success('Feedback saved');
-        router.replace(`/interview/${interview_id}/completed`);
       }
     } catch (err) {
       console.error('Feedback generation error:', err);
       toast.error('Failed to generate feedback');
+    } finally {
+        router.replace(`/interview/${interview_id}/completed`);
     }
   };
 
-  // === Handle Vapi Events ===
   useEffect(() => {
     if (!vapiRef.current) return;
 
@@ -171,31 +231,30 @@ function StartInterview() {
 
     const handleSpeechStart = () => setActiveUser(false);
     const handleSpeechEnd = () => setActiveUser(true);
-
+    
+    // This handler will now call the guarded `stopInterview` function.
     const handleCallEnd = () => {
-      toast('Interview ended');
-      cleanupVapi();
-      GenerateFeedback();
+      toast('Interview has ended.');
+      stopInterview(); 
     };
 
     vapiRef.current.on('message', handleMessage);
     vapiRef.current.on('call-start', handleCallStart);
-    vapiRef.current.on('Speech-Start', handleSpeechStart);
-    vapiRef.current.on('Speech-end', handleSpeechEnd);
+    vapiRef.current.on('speech-start', handleSpeechStart);
+    vapiRef.current.on('speech-end', handleSpeechEnd);
     vapiRef.current.on('call-end', handleCallEnd);
 
     return () => {
       if (vapiRef.current) {
         vapiRef.current.off('message', handleMessage);
         vapiRef.current.off('call-start', handleCallStart);
-        vapiRef.current.off('Speech-Start', handleSpeechStart);
-        vapiRef.current.off('Speech-end', handleSpeechEnd);
+        vapiRef.current.off('speech-start', handleSpeechStart);
+        vapiRef.current.off('speech-end', handleSpeechEnd);
         vapiRef.current.off('call-end', handleCallEnd);
       }
     };
   }, []);
 
-  // === Face Detection Logic ===
   useEffect(() => {
     let model;
 
@@ -207,15 +266,17 @@ function StartInterview() {
         model = await blazeface.load();
 
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        streamRef.current = stream;
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setDetectionReady(true);
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            streamRef.current = stream;
+            await videoRef.current.play();
+            setDetectionReady(true);
+        }
 
         const ctx = canvasRef.current.getContext('2d');
 
         const detect = async () => {
-          if (videoRef.current.readyState === 4) {
+          if (videoRef.current && videoRef.current.readyState === 4) {
             canvasRef.current.width = videoRef.current.videoWidth;
             canvasRef.current.height = videoRef.current.videoHeight;
 
@@ -223,8 +284,8 @@ function StartInterview() {
             setFacesDetected(predictions.length);
 
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'rgba(74, 222, 128, 0.8)';
 
             if (predictions.length === 1) {
               const pred = predictions[0];
@@ -239,13 +300,15 @@ function StartInterview() {
 
               if (eyeSlope > 10 || headTurn > 20) {
                 setFaceWarning('⚠ Please look straight at the camera.');
+                ctx.strokeStyle = 'rgba(251, 191, 36, 0.8)'; 
+                ctx.strokeRect(x, y, x2 - x, y2 - y);
               } else {
                 setFaceWarning('✅ Face aligned properly.');
               }
             } else if (predictions.length === 0) {
-              setFaceWarning('❌ No face detected. Please sit in front of the camera.');
+              setFaceWarning('❌ No face detected. Please position yourself in front of the camera.');
             } else {
-              setFaceWarning('⚠ Multiple faces detected. Only one person allowed.');
+              setFaceWarning('⚠ Multiple faces detected. Please ensure only you are visible.');
             }
           }
 
@@ -255,7 +318,8 @@ function StartInterview() {
         detect();
       } catch (err) {
         console.error('Face detection error:', err);
-        toast.error('Failed to initialize camera');
+        toast.error('Could not initialize camera. Please check permissions.');
+        setDetectionReady(true);
       }
     };
 
@@ -266,50 +330,92 @@ function StartInterview() {
     };
   }, []);
 
+  const getWarningTextColor = () => {
+    if (faceWarning.includes('✅')) return 'text-green-600';
+    if (faceWarning.includes('⚠')) return 'text-yellow-500';
+    if (faceWarning.includes('❌')) return 'text-red-500';
+    return 'text-gray-500';
+  };
+
   return (
-    <div className='p-20 lg:px-48 xl:px-56'>
-      <h2 className='font-bold text-xl flex justify-between'>
-        AI Interview Session
-        <span className='flex gap-2 items-center'>
-          <Timer />
-          {formatTime(elapsedTime)}
-        </span>
-      </h2>
-
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-7'>
-        <div className='bg-white h-[400px] rounded-lg border flex flex-col gap-3 items-center justify-center mt-5'>
-          <div className='relative'>
-            {!activeUser && <span className='absolute inset-0 rounded-full bg-blue-500 opacity-75 animate-ping'></span>}
-            <Image src='/OIP.png' alt='AI' width={60} height={60} className='w-[60px] h-[60px] rounded-full object-cover' />
+    <div className='flex flex-col min-h-screen bg-gray-100'>
+      {/* Header */}
+      <header className='p-4 sm:p-6 w-full shadow-sm bg-white border-b'>
+        <div className='max-w-7xl mx-auto flex justify-between items-center'>
+          <h1 className='text-xl sm:text-2xl font-bold text-gray-800'>AI Interview Session</h1>
+          <div className='flex items-center gap-3 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-mono'>
+            <Timer className='h-6 w-6' />
+            <span className='text-xl tracking-wider'>{formatTime(elapsedTime)}</span>
           </div>
-          <h2>AI Recruiter</h2>
+        </div>
+      </header>
+      
+      {/* Main Content */}
+      <main className='flex-grow flex flex-col items-center justify-center p-4 sm:p-8'>
+        <div className='w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8'>
+
+          {/* AI Recruiter Panel */}
+          <div className='bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col items-center justify-center p-8 aspect-video'>
+            <div className={`relative rounded-full p-2 transition-all duration-300 ${!activeUser ? 'ring-4 ring-blue-500 ring-opacity-75' : 'ring-4 ring-transparent'}`}>
+              <Image src='/OIP.png' alt='AI Recruiter' width={100} height={100} className='w-24 h-24 rounded-full object-cover shadow-md' />
+              {!activeUser && (
+                <span className='absolute inset-0 rounded-full bg-blue-500 opacity-75 animate-ping'></span>
+              )}
+            </div>
+            <h2 className='text-2xl font-semibold text-gray-800 mt-5'>AI Recruiter</h2>
+            <p className='text-gray-500 mt-1 h-6'>{activeUser ? 'Listening for your response...' : 'Speaking...'}</p>
+          </div>
+          
+          {/* User Video Panel */}
+          <div className='bg-black rounded-xl shadow-lg border border-gray-200 flex flex-col items-center justify-center p-1 relative overflow-hidden aspect-video'>
+            {!detectionReady && (
+              <div className='absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70 z-20'>
+                <Loader2Icon className='h-12 w-12 animate-spin text-white mb-4'/>
+                <p className='text-white font-medium'>Initializing Camera...</p>
+              </div>
+            )}
+            <div className='relative w-full h-full'>
+              <video ref={videoRef} muted playsInline className='absolute top-0 left-0 w-full h-full object-cover rounded-lg' />
+              <canvas ref={canvasRef} className='absolute top-0 left-0 w-full h-full pointer-events-none' />
+
+               <div className='absolute top-3 left-3 p-2 px-4 rounded-lg text-sm font-semibold bg-gray-900 bg-opacity-50 text-white z-10'>
+                  {interviewInfo?.userName || 'Candidate'}
+                </div>
+            </div>
+          </div>
         </div>
 
-        <div className='bg-white h-[400px] rounded-lg border flex flex-col gap-3 items-center justify-center mt-5 relative overflow-hidden'>
-          <h2>{interviewInfo?.userName}</h2>
-          <div className='relative w-full flex justify-center mt-2' style={{ height: 250 }}>
-            <video ref={videoRef} muted playsInline className='absolute top-0 left-0 w-full h-full object-cover rounded-md' />
-            <canvas ref={canvasRef} className='absolute top-0 left-0 w-full h-full rounded-md pointer-events-none' />
-          </div>
-          <p className='text-sm mt-2 text-gray-500'>Faces detected: {facesDetected}</p>
-          <p className='text-sm text-center font-medium'>{faceWarning}</p>
+        {/* Status & Warning Area */}
+        <div className='w-full max-w-7xl mt-4 text-center'>
+            <p className={`text-md font-medium ${getWarningTextColor()}`}>
+                {faceWarning || 'Camera check complete.'}
+            </p>
         </div>
-      </div>
+      </main>
 
-      <div className='flex items-center gap-5 justify-center mt-3'>
-        <Mic className='h-12 w-12 bg-gray-700 text-white rounded-full cursor-pointer' />
-        <AlertConfirmation stopInterview={stopInterview}>
+      {/* Footer Controls */}
+      <footer className='w-full bg-white bg-opacity-75 backdrop-blur-sm p-4 sticky bottom-0 border-t'>
+        <div className='max-w-md mx-auto flex items-center justify-center gap-6'>
+          <button className='p-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors cursor-not-allowed' disabled>
+            <Mic className='h-6 w-6' />
+          </button>
+          
           {!loading ? (
-            <Phone className='h-12 w-12 bg-red-700 text-white rounded-full cursor-pointer' onClick={stopInterview} />
+            <button 
+              className='p-5 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg transform hover:scale-105' 
+              onClick={stopInterview}
+              aria-label="End Interview"
+            >
+              <Phone className='h-7 w-7' />
+            </button>
           ) : (
-            <Loader2Icon className='h-12 w-12 animate-spin text-gray-500' />
+            <button className='p-5 rounded-full bg-gray-200 text-gray-500' disabled>
+               <Loader2Icon className='h-7 w-7 animate-spin' />
+            </button>
           )}
-        </AlertConfirmation>
-      </div>
 
-      <h2 className='text-sm text-gray-400 text-center mt-5'>
-        {detectionReady ? 'Interview in Progress...' : 'Initializing camera...'}
-      </h2>
+        </div>
+      </footer>
     </div>
   );
 }

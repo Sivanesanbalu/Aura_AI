@@ -30,7 +30,7 @@ function ScheduledInterview() {
         interview_id,
         created_at,
         interview-feedback(userEmail, feedback, created_at)
-      `) // Make sure 'interview-feedback' is the correct relation name
+      `) 
       .eq("email", email)
       .order("created_at", { ascending: false });
 
