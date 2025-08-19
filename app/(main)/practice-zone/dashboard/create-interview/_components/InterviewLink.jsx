@@ -40,7 +40,7 @@ function InterviewLink({ interview_id, formData, questionList }) {
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 sm:p-6 xl:px-40"
+      className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 sm:p-6"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -65,7 +65,7 @@ function InterviewLink({ interview_id, formData, questionList }) {
         {formData && (
           <motion.div
             variants={itemVariants}
-            className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8"
+            className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6"
           >
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Interview Details</h2>
             <div className="space-y-3">
@@ -187,7 +187,7 @@ function InterviewLink({ interview_id, formData, questionList }) {
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
             >
-              <Plus size={10} />
+              <Plus size={16} />
               <span>Connect to Interview</span>
             </motion.button>
           </Link>

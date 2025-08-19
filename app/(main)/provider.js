@@ -1,25 +1,26 @@
+
 "use client";
 
 import React from 'react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from './_components/AppSidebar';
-import WelcomeContainer from './dashboard/_components/WelcomeContainer';
-import { useUser } from '@clerk/nextjs'; 
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { useUser } from '@clerk/nextjs';
+
 
 function DashboardProvider({ children }) {
-  const { user, isSignedIn } = useUser(); 
+  const { user, isSignedIn } = useUser();
 
+  
   return (
     <SidebarProvider>
-      <AppSidebar />
-
-      <div>
-        <SidebarTrigger />
-      </div>
-
-      <div className="w-full p-6">
-        <WelcomeContainer user={user} isSignedIn={isSignedIn} /> {/* Optional: pass user data */}
-        {children}
+      <div >
+        
+        <div >
+          
+          <main >
+           
+            {children}
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );

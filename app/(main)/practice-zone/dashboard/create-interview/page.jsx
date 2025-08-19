@@ -8,7 +8,7 @@ import FormContainer from './_components/FormContainer';
 import QuestionList from './_components/QuestionList';
 import { toast } from 'sonner';
 import InterviewLink from './_components/InterviewLink';
-import SyncUserToSupabase from '@/app/components/SyncUserToSupabase'; 
+import SyncUserToSupabase from '@/app/components/SyncUserToSupabase'; // adjust path if needed
 import { useUser } from '@clerk/nextjs';
 
 function CreateInterview() {
@@ -41,7 +41,7 @@ function CreateInterview() {
   };
 
   return (
-    <div className="mt-5 px-10 md:px-24 lg:px-44 xl:px-56">
+    <div className='mt-5 px-10 md:px-24 lg:px-44 xl:px-56'>
       <SyncUserToSupabase />
       <div className='flex gap-5 items-center'>
         <ArrowLeft onClick={() => router.back()} className='' />

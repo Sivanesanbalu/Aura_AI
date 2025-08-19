@@ -13,7 +13,7 @@ function QuestionListContainer({ questionList }) {
             className="bg-white border rounded-md p-4 shadow-sm mt-2"
           >
             <strong>Q{index + 1}:</strong> {q?.question || 'No question provided'}
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-blue-600 mt-1">
               Type: {q?.type || 'Unknown'}
             </p>
           </div>

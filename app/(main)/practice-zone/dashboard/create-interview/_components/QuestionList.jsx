@@ -62,6 +62,7 @@ function QuestionList({ formData, interview_id, onCreateLink, questionList, setQ
     return;
   }
 
+  // ✅ Step 1: Fetch current credits
   const { data: userData, error: fetchError } = await supabase
     .from('Users')
     .select('credits')
@@ -75,8 +76,9 @@ function QuestionList({ formData, interview_id, onCreateLink, questionList, setQ
     return;
   }
 
-  const updatedCredits = Math.max(userData.credits - 1, 0); 
+  const updatedCredits = Math.max(userData.credits - 1, 0); // avoid negative credits
 
+  // ✅ Step 2: Update credits
   const { error: updateError } = await supabase
     .from('Users')
     .update({ credits: updatedCredits })
@@ -98,8 +100,8 @@ function QuestionList({ formData, interview_id, onCreateLink, questionList, setQ
   return (
     <div>
       {loading ? (
-        <div className="mt-4 p-6 bg-gray-50 border border-gray-200 rounded-xl shadow-sm space-y-4">
-          <Loader2Icon className="animate-spin w-6 h-6 text-gray-600" />
+        <div className="p-5 bg-blue-50 rounded-xl border-primary border-gray-100 flex gap-5 items-center">
+          <Loader2Icon className="animate-spin w-6 h-6 text-blue-600" />
           <div>
             <h2 className="font-medium">Generating Interview Questions</h2>
             <p className="text-primary">

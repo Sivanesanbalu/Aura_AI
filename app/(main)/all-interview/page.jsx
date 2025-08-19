@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Video } from 'lucide-react';
 
 import React, { useEffect, useState } from "react";
-import InterviewCard from '../dashboard/_components/InterviewCard';
+import InterviewCard from '../practice-zone/dashboard/_components/InterviewCard';
 import { useUser } from '@clerk/nextjs';
 
 

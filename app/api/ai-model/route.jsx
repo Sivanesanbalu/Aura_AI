@@ -63,7 +63,7 @@ export async function POST(req) {
     });
 
     const completion = await openai.chat.completions.create({
-      model: 'google/gemma-3n-e2b-it:free',
+      model: 'mistralai/mistral-small-3.1-24b-instruct:free',
       messages: [
         {
           role: 'user',

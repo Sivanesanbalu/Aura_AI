@@ -21,7 +21,7 @@ function InterviewDetailContainer({ interviewDetail }) {
             <h2 className="flex text-sm font-bold items-center gap-2">
               <Clock className="h-4 w-4" /> {interviewDetail.type}
             </h2>
-          </div>
+          </div>  
         )}
 
         

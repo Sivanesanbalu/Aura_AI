@@ -13,7 +13,7 @@
     color: transparent;
   }
   50% {
-    color: #06b6d4;
+    color: #9f9f9f;
   }
 }
 
@@ -37,7 +37,7 @@
 
 @layer base {
   :root {
-    --sidebar: oklch(100% 0.00011 271.152);
+    --sidebar: oklch(94.309% 0.00011 271.152);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
     --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -49,7 +49,7 @@
 
   .dark {
     --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(76.358% 0.00009 271.152);
     --sidebar-primary: oklch(0.488 0.243 264.376);
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.269 0 0);
@@ -101,7 +101,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(83.902% 0.0001 271.152);
+  --background:#ecebeb;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -176,3 +176,4 @@
     @apply bg-background text-foreground;
   }
 }
+

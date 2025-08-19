@@ -36,8 +36,8 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
   return (
     <div className="p-8 bg-gray-50 rounded-2xl shadow-lg max-w-2xl mx-auto my-10">
       <div className="text-center mb-8">
-        {/* image path */}
-        <img src="/logo.png" alt="AuraAI" className="h-8 mx-auto mb-6" />
+        {/* Corrected image path */}
+        <img src="/logo.png" alt="AuraAI" className="h-19 mx-auto mb-9" />
         <h1 className="text-3xl font-bold text-gray-800">Let's find your next great hire!</h1>
         <p className="text-gray-600 mt-2">Start by telling us about the role you're looking to fill.</p>
       </div>
@@ -46,12 +46,12 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
         <div>
           <label htmlFor="jobPosition" className="flex items-center text-md font-medium text-gray-700 mb-2">
             <Briefcase className="h-5 w-5 mr-2 text-blue-500" />
-            What role are you practice for?
+            What role are you hiring for?
           </label>
           <Input
             id="jobPosition"
             placeholder="e.g., Senior Software Engineer"
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-gray-500 focus:border-gray-500"
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
             value={jobPosition}
             onChange={(e) => {
               setJobPosition(e.target.value);
@@ -75,7 +75,7 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
           />
         </div>
 
-        {/* duration */}
+        {/* This div now only contains the duration selector */}
         <div>
           <label htmlFor="duration" className="flex items-center text-md font-medium text-gray-700 mb-2">
             <Clock className="h-5 w-5 mr-2 text-blue-500" />
@@ -92,6 +92,7 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
               <SelectValue placeholder="Select a duration" />
             </SelectTrigger>
             <SelectContent>
+              
               <SelectItem value="60 ">60 Minutes</SelectItem>
               <SelectItem value="90 ">90 Minutes</SelectItem>
             </SelectContent>
@@ -110,8 +111,8 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
                 key={index}
                 className={`flex items-center cursor-pointer gap-2 py-2 px-4 border rounded-full transition-colors ${
                   interviewType.includes(type.title)
-                    ? "bg-gray-500 text-white border-gray-500"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-gray-400"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-blue-50 hover:border-blue-400"
                 }`}
                 onClick={() => AddInterviewType(type.title)}
               >
@@ -127,7 +128,7 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
         <Button
           onClick={GoToNext}
           disabled={!jobPosition.trim() || !duration || interviewType.length === 0}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 disabled:bg-gray-400 disabled:shadow-none disabled:scale-100"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 disabled:bg-gray-400 disabled:shadow-none disabled:scale-100"
         >
           Generate Questions <ArrowRight className="ml-2" />
         </Button>

@@ -1,17 +1,24 @@
-import React from 'react'
-import DashboardProvider from './provider'
-
-function DashboardLayout({ children }) {
+"use client";
+import React from "react";
+import DashboardProvider from "./provider";
+import { Header } from "./_components/Header";
+import { ThemeProvider } from "next-themes";
+function MainLayout({ children }) {
   return (
-    <div>
-        <DashboardProvider>
-            <div className='p-10'>
-                {children}
-            </div>
-            
-        </DashboardProvider>
-    </div>
-  )
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <DashboardProvider>
+        
+        <div className="min-h-screen w-full bg-background">
+          <Header />
+          
+          
+          <main className="px-6 md:px-55">
+            {children}
+          </main>
+        </div>
+      </DashboardProvider>
+    </ThemeProvider>
+  );
 }
 
-export default DashboardLayout
+export default MainLayout;
