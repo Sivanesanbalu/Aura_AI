@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Phone, Video, ArrowRight } from 'lucide-react';
 
-// A simple, static card component for clarity and ease of use.
 const OptionCard = ({ href, icon, title, description }) => {
     return (
         <Link href={href} passHref>

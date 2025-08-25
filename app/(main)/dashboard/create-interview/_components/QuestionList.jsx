@@ -98,7 +98,7 @@ function QuestionList({ formData, interview_id, onCreateLink, questionList, setQ
   return (
     <div>
       {loading ? (
-        <div className="mt-4 p-6 bg-gray-50 border border-gray-200 rounded-xl shadow-sm space-y-4">
+        <div className="mt-4 p-6 bg-gray-50 border border-gray-200 rounded-2xl shadow-sm space-y-4">
           <Loader2Icon className="animate-spin w-6 h-6 text-gray-600" />
           <div>
             <h2 className="font-medium">Generating Interview Questions</h2>

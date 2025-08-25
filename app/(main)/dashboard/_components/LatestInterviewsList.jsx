@@ -5,7 +5,7 @@ import { supabase } from "@/app/components/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, PlusCircle, Sparkles } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import InterviewCard from "./InterviewCard"; // Assuming this is a well-styled component
+import InterviewCard from "./InterviewCard"; 
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -31,7 +31,7 @@ const InterviewSkeletonCard = () => (
 );
 
 
-function LatestInterviewsList({ darkMode = false }) { // Defaulting darkMode to false
+function LatestInterviewsList({ darkMode = false }) { 
   const { user } = useUser();
   const [interviewList, setInterviewList] = useState([]);
   const [loading, setLoading] = useState(true);

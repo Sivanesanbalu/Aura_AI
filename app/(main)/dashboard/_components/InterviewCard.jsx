@@ -48,10 +48,9 @@ function InterviewCard({ interview, viewDetail = false, darkMode = true }) {
   const url = `${hostUrl}/interview/${interviewId}`;
   const candidateCount = interview["interview-feedback"]?.length || 0;
 
-  const copyLink = async (e) => { e.stopPropagation(); try { await navigator.clipboard.writeText(url); toast.success("✅ Link copied to clipboard!"); } catch (err) { toast.error("❌ Failed to copy link."); } };
+  const copyLink = async (e) => { e.stopPropagation(); try { await navigator.clipboard.writeText(url); toast.success(" Link copied to clipboard!"); } catch (err) { toast.error("❌ Failed to copy link."); } };
   const sendLink = (e) => { e.stopPropagation(); const subject = encodeURIComponent("Your Interview Link for " + interview.jobPosition); const body = encodeURIComponent(`You have been invited to an AI-powered interview.\n\nPlease use the following link to proceed:\n${url}`); window.location.href = `mailto:?subject=${subject}&body=${body}`; };
 
-  // Get the unique style for this card
   const fieldStyle = getFieldStyle(interview.jobPosition);
 
   return (

@@ -18,7 +18,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
 
-    "baseUrl": ".",          // <-- add this line
+    "baseUrl": ".",         // <-- add this line
     "paths": {               // <-- and add this section
       "@/*": ["./*"]
     },
@@ -34,7 +34,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "app/administration/page.jsx", "app/administration/_components/MemberActions.jsx"  ],
   "exclude": [
     "node_modules"
   ]

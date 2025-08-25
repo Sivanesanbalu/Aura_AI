@@ -1,4 +1,3 @@
-
 "use client";
 import { Bell } from 'lucide-react';
 import Link from 'next/link';
@@ -9,11 +8,12 @@ import { Button } from '@/components/ui/button';
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm dark:border-gray-800 dark:bg-slate-950">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-gray-800 bg-slate-950 px-6 shadow-sm">
       
       {/* Left Side: Brand Name */}
       <div className="flex items-center">
-         <Link href="/dashboard" className="text-xl font-bold">
+         {/* Added text-white to make the brand name visible */}
+         <Link href="/dashboard" className="text-xl font-bold text-white">
             AURA AI
          </Link>
       </div>
@@ -22,7 +22,8 @@ export function Header() {
       <div className="flex items-center gap-4">
         <SignedIn>
           
-          <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800">
+          {/* Updated text and hover colors for the dark background */}
+          <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-800">
             <Bell className="h-5 w-5" />
             <span className="absolute right-2 top-2 block h-1.5 w-1.5 rounded-full bg-red-500" />
           </button>

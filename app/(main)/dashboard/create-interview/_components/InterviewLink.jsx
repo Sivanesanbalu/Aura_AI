@@ -1,6 +1,5 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, Clock, Copy, List, Mail, Plus, Share2 } from 'lucide-react';
@@ -21,15 +20,12 @@ function InterviewLink({ interview_id, formData, questionList }) {
     }
   };
 
-  // Animation variants for smooth transitions
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        staggerChildren: 0.1,
-      },
+      transition: { staggerChildren: 0.1 },
     },
   };
 
@@ -40,12 +36,14 @@ function InterviewLink({ interview_id, formData, questionList }) {
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 sm:p-6 xl:px-40"
+      className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 sm:p-6 xl:px-2"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
-      <div className="w-full max-w-2xl">
+      {/* Fixed width container */}
+      <div className="w-[570px]">
+        
         {/* Header Section */}
         <motion.div variants={itemVariants} className="text-center mb-8">
           <Image
@@ -65,52 +63,52 @@ function InterviewLink({ interview_id, formData, questionList }) {
         {formData && (
           <motion.div
             variants={itemVariants}
-            className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8"
+            className="bg-white p-10 rounded-2xl shadow-md border border-gray-200 mb-8"
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Interview Details</h2>
-            <div className="space-y-3">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Interview Details</h2>
+            <div className="space-y-4">
               {formData.jobPosition && (
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <List className="text-blue-600" size={20} />
+                <div className="flex items-center gap-4">
+                  <div className="bg-blue-100 p-3 rounded-lg">
+                    <List className="text-blue-600" size={24} />
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Position</p>
-                    <p className="font-medium text-gray-800">{formData.jobPosition}</p>
+                    <p className="font-medium text-gray-800 text-lg">{formData.jobPosition}</p>
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {formData.date && (
-                  <div className="flex items-center gap-3">
-                    <div className="bg-green-100 p-2 rounded-lg">
-                      <Calendar className="text-green-600" size={20} />
+                  <div className="flex items-center gap-4">
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <Calendar className="text-green-600" size={24} />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Date</p>
-                      <p className="font-medium text-gray-800">{formData.date}</p>
+                      <p className="font-medium text-gray-800 text-lg">{formData.date}</p>
                     </div>
                   </div>
                 )}
                 {formData.time && (
-                  <div className="flex items-center gap-3">
-                    <div className="bg-purple-100 p-2 rounded-lg">
-                      <Clock className="text-purple-600" size={20} />
+                  <div className="flex items-center gap-4">
+                    <div className="bg-purple-100 p-3 rounded-lg">
+                      <Clock className="text-purple-600" size={24} />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Time</p>
-                      <p className="font-medium text-gray-800">{formData.time}</p>
+                      <p className="font-medium text-gray-800 text-lg">{formData.time}</p>
                     </div>
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-3 pt-2">
-                <div className="bg-yellow-100 p-2 rounded-lg">
-                  <List className="text-yellow-600" size={20} />
+              <div className="flex items-center gap-4 pt-3">
+                <div className="bg-yellow-100 p-3 rounded-lg">
+                  <List className="text-yellow-600" size={24} />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Questions</p>
-                  <p className="font-medium text-gray-800">{questionList?.length ?? 0} Questions</p>
+                  <p className="font-medium text-gray-800 text-lg">{questionList?.length ?? 0} Questions</p>
                 </div>
               </div>
             </div>
@@ -120,7 +118,7 @@ function InterviewLink({ interview_id, formData, questionList }) {
         {/* Interview Link & Share Card */}
         <motion.div
           variants={itemVariants}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+          className="bg-white p-10 rounded-2xl shadow-md border border-gray-200"
         >
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-lg text-gray-900">Interview Link</h3>
@@ -129,21 +127,20 @@ function InterviewLink({ interview_id, formData, questionList }) {
             </span>
           </div>
 
-          {/* Modern Read-only Input with Copy Button */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-2 border border-gray-200">
+          <div className="flex items-center bg-gray-100 rounded-lg p-3 border border-gray-200">
             <input
               type="text"
               value={url}
               readOnly
-              className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-700"
+              className="flex-1 bg-transparent border-none focus:ring-0 text-base text-gray-700 py-3"
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onCopyLink}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors duration-200"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-md text-base font-semibold transition-colors duration-200"
             >
-              <Copy size={16} />
+              <Copy size={18} />
               <span>Copy</span>
             </motion.button>
           </div>
@@ -154,18 +151,18 @@ function InterviewLink({ interview_id, formData, questionList }) {
               <motion.a
                 whileHover={{ scale: 1.05 }}
                 href={`mailto:?subject=Interview Link&body=${encodeURIComponent(url)}`}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 px-5 py-3 border border-gray-300 rounded-lg text-base text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                <Mail size={16} /> Email
+                <Mail size={18} /> Email
               </motion.a>
               <motion.a
                 whileHover={{ scale: 1.05 }}
                 href={`https://wa.me/?text=${encodeURIComponent(url)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 px-5 py-3 border border-gray-300 rounded-lg text-base text-gray-700 hover:bg-gray-100 transition-colors"
               >
-                <Share2 size={16} /> WhatsApp
+                <Share2 size={18} /> WhatsApp
               </motion.a>
             </div>
           </div>
@@ -176,18 +173,18 @@ function InterviewLink({ interview_id, formData, questionList }) {
           <Link href="/dashboard">
             <motion.button
               whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-5 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-3 px-6 py-3 border border-gray-300 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100 transition-colors"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={18} />
               <span>Dashboard</span>
             </motion.button>
           </Link>
           <Link href={`/interview/${interview_id}`}>
             <motion.button
               whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+              className="flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-base font-semibold transition-colors shadow-md"
             >
-              <Plus size={10} />
+              <Plus size={14} />
               <span>Connect to Interview</span>
             </motion.button>
           </Link>

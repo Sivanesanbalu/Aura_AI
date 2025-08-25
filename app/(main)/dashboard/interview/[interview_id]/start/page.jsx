@@ -1,7 +1,7 @@
 'use client';
 
 import { InterviewDataContex } from '@/context/InterviewDataContext';
-import { Loader2Icon, Mic, Phone, Timer } from 'lucide-react';
+import { Loader2Icon, Mic, Phone, Timer, Star, Smile, Meh, Frown, BrainCircuit } from 'lucide-react';
 import Image from 'next/image';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import Vapi from '@vapi-ai/web';
@@ -10,9 +10,17 @@ import { supabase } from '@/app/components/supabaseClient';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 
+// --- Import MediaPipe and other necessary libraries ---
+import { FaceLandmarker, FilesetResolver, Pose, HandLandmarker } from "@mediapipe/tasks-vision";
+
+// --- MOCK ANALYSIS DATA ---
+// In a real application, this data would come from a backend via WebSocket.
+const MOCK_SENTIMENTS = ['Confident', 'Neutral', 'Slightly Hesitant', 'Confident'];
+const MOCK_EMOTIONS = ['Calm', 'Focused', 'Engaged', 'Excited'];
+
 function StartInterview() {
   const { interviewInfo } = useContext(InterviewDataContex);
-  const vapiRef = useRef(null); 
+  const vapiRef = useRef(null);
 
   const [activeUser, setActiveUser] = useState(false);
   const [conversation, setConversation] = useState();
@@ -22,17 +30,30 @@ function StartInterview() {
   const [faceWarning, setFaceWarning] = useState('');
   const [detectionReady, setDetectionReady] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  
-  // --- MODIFICATION START ---
-  // Added a state to act as a lock, preventing the stopInterview function from running multiple times.
   const [isStopping, setIsStopping] = useState(false);
-  // --- MODIFICATION END ---
+  
+  // --- NEW STATES FOR ADVANCED ANALYSIS ---
+  const [currentSentiment, setCurrentSentiment] = useState('Neutral');
+  const [currentEmotion, setCurrentEmotion] = useState('Calm');
+  const [answerQuality, setAnswerQuality] = useState({ score: 0, feedback: 'Awaiting answer...' });
+  const [microExpression, setMicroExpression] = useState('Neutral');
+  const [posture, setPosture] = useState('Upright');
+  const [eyeContact, setEyeContact] = useState(true);
+  const [gestures, setGestures] = useState([]);
+  const [focusScore, setFocusScore] = useState(100);
+  // --- END NEW STATES ---
 
   const timerRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const animationRef = useRef(null);
+  const animationFrameId = useRef(null);
   const streamRef = useRef(null);
+  
+  // Refs for MediaPipe models
+  const faceLandmarker = useRef();
+  const poseEstimator = useRef();
+  const handLandmarker = useRef();
+  const lastVideoTime = useRef(-1);
 
   const { interview_id } = useParams();
   const router = useRouter();
@@ -55,7 +76,7 @@ function StartInterview() {
             toast.warning(` You switched tabs (${newCount}/3). Please stay focused.`);
           } else {
             toast.error(' You have switched tabs too many times. Interview will now end.');
-            stopInterview(); 
+            stopInterview();
           }
 
           return newCount;
@@ -83,6 +104,18 @@ function StartInterview() {
     };
   }, [interviewInfo]);
 
+    // --- MOCK DATA SIMULATION ---
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // This simulates receiving real-time updates from a backend.
+      setCurrentSentiment(MOCK_SENTIMENTS[Math.floor(Math.random() * MOCK_SENTIMENTS.length)]);
+      setCurrentEmotion(MOCK_EMOTIONS[Math.floor(Math.random() * MOCK_EMOTIONS.length)]);
+    }, 5000); // Update every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+
   const startCall = () => {
     const questionList = interviewInfo?.interviewData?.questionList
       ?.map((q) => q.question)
@@ -95,7 +128,7 @@ function StartInterview() {
       voice: { provider: 'playht', voiceId: 'jennifer' },
       model: {
         provider: 'openai',
-        model: 'gpt-4', 
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -141,13 +174,12 @@ function StartInterview() {
     vapiRef.current.start(assistantOptions);
   };
 
-  // --- MODIFICATION START ---
-  // The stopInterview function is now guarded by the `isStopping` state.
+
   const stopInterview = async () => {
-    // If the stopping process has already begun, exit immediately to prevent a race condition.
-    if (isStopping) return; 
-    
-    setIsStopping(true); // Set the lock
+
+    if (isStopping) return;
+
+    setIsStopping(true);
     setLoading(true);
     toast('Ending interview...');
 
@@ -159,14 +191,11 @@ function StartInterview() {
       console.error('Error stopping interview:', err);
       toast.error('Failed to stop interview');
       setLoading(false);
-      setIsStopping(false); // Release the lock if an error occurs to allow a retry.
+      setIsStopping(false);
     }
   };
-  // --- MODIFICATION END ---
 
-  // --- MODIFICATION START ---
-  // The cleanup function is simplified. `vapi.stop()` is the correct method to end
-  // the session. `disconnect()` is often redundant and can cause issues if called immediately after.
+
   const cleanupVapi = () => {
     if (vapiRef.current) {
       try {
@@ -177,12 +206,11 @@ function StartInterview() {
       vapiRef.current = null;
     }
     if (timerRef.current) clearInterval(timerRef.current);
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
     }
   };
-  // --- MODIFICATION END ---
 
   const GenerateFeedback = async () => {
     if (feedbackGenerated || !conversation) {
@@ -218,13 +246,23 @@ function StartInterview() {
     }
   };
 
-  useEffect(() => {
+
+    useEffect(() => {
     if (!vapiRef.current) return;
 
     const handleMessage = (message) => {
       if (message?.conversation) {
         const convoString = JSON.stringify(message.conversation);
         setConversation(convoString);
+
+
+        const lastUtterance = message?.conversation?.at(-1)?.content?.toLowerCase() || "";
+        const endKeywords = ["end interview", "stop interview", "finish interview", "wrap up", "quit interview"];
+
+        if (endKeywords.some(keyword => lastUtterance.includes(keyword))) {
+          toast.warning("Candidate requested to end interview.");
+          stopInterview();
+        }
       }
     };
 
@@ -238,11 +276,10 @@ function StartInterview() {
 
     const handleSpeechStart = () => setActiveUser(false);
     const handleSpeechEnd = () => setActiveUser(true);
-    
-    // This handler will now call the guarded `stopInterview` function.
+
     const handleCallEnd = () => {
       toast('Interview has ended.');
-      stopInterview(); 
+      stopInterview();
     };
 
     vapiRef.current.on('message', handleMessage);
@@ -262,78 +299,78 @@ function StartInterview() {
     };
   }, []);
 
+
   useEffect(() => {
-    let model;
+    const createHolisticModels = async () => {
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+      );
+      faceLandmarker.current = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+          delegate: "GPU",
+        },
+        outputFaceBlendshapes: true,
+        runningMode: "VIDEO",
+        numFaces: 1,
+      });
+      poseEstimator.current = await Pose.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
+          delegate: "GPU",
+        },
+        runningMode: "VIDEO",
+        numPoses: 1,
+      });
+      handLandmarker.current = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+            delegate: "GPU",
+          },
+          runningMode: "VIDEO",
+          numHands: 2,
+        });
 
-    const loadModelAndDetect = async () => {
-      try {
-        const tf = await import('@tensorflow/tfjs');
-        const blazeface = await import('@tensorflow-models/blazeface');
-        await tf.ready();
-        model = await blazeface.load();
-
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            streamRef.current = stream;
-            await videoRef.current.play();
-            setDetectionReady(true);
-        }
-
-        const ctx = canvasRef.current.getContext('2d');
-
-        const detect = async () => {
-          if (videoRef.current && videoRef.current.readyState === 4) {
-            canvasRef.current.width = videoRef.current.videoWidth;
-            canvasRef.current.height = videoRef.current.videoHeight;
-
-            const predictions = await model.estimateFaces(videoRef.current, false);
-            setFacesDetected(predictions.length);
-
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = 'rgba(74, 222, 128, 0.8)';
-
-            if (predictions.length === 1) {
-              const pred = predictions[0];
-              const [x, y] = pred.topLeft;
-              const [x2, y2] = pred.bottomRight;
-              ctx.strokeRect(x, y, x2 - x, y2 - y);
-
-              const [rightEye, leftEye, nose] = pred.landmarks;
-              const eyeSlope = Math.abs(rightEye[1] - leftEye[1]);
-              const noseCenter = (rightEye[0] + leftEye[0]) / 2;
-              const headTurn = Math.abs(nose[0] - noseCenter);
-
-              if (eyeSlope > 10 || headTurn > 20) {
-                setFaceWarning('⚠ Please look straight at the camera.');
-                ctx.strokeStyle = 'rgba(251, 191, 36, 0.8)'; 
-                ctx.strokeRect(x, y, x2 - x, y2 - y);
-              } else {
-                setFaceWarning('✅ Face aligned properly.');
-              }
-            } else if (predictions.length === 0) {
-              setFaceWarning('❌ No face detected. Please position yourself in front of the camera.');
-            } else {
-              setFaceWarning('⚠ Multiple faces detected. Please ensure only you are visible.');
-            }
-          }
-
-          animationRef.current = requestAnimationFrame(detect);
-        };
-
-        detect();
-      } catch (err) {
-        console.error('Face detection error:', err);
-        toast.error('Could not initialize camera. Please check permissions.');
-        setDetectionReady(true);
-      }
+      setDetectionReady(true);
+      startDetection();
     };
 
-    loadModelAndDetect();
+    const startDetection = () => {
+      if (videoRef.current && videoRef.current.readyState >= 3) {
+        predictWebcam();
+      } else {
+        setTimeout(startDetection, 100);
+      }
+    };
+    
+    createHolisticModels();
+
+    const predictWebcam = () => {
+      const video = videoRef.current;
+      if (video.currentTime !== lastVideoTime.current) {
+        lastVideoTime.current = video.currentTime;
+        const startTimeMs = performance.now();
+        
+        if (faceLandmarker.current) {
+          const faceLandmarkerResult = faceLandmarker.current.detectForVideo(video, startTimeMs);
+          // Process face results (micro-expressions, eye contact)
+        }
+        if (poseEstimator.current) {
+          const poseResult = poseEstimator.current.detectForVideo(video, startTimeMs);
+          // Process pose results (posture)
+        }
+        if (handLandmarker.current) {
+            const handLandmarkerResult = handLandmarker.current.detectForVideo(video, startTimeMs);
+            // Process hand results (gestures)
+        }
+      }
+      animationFrameId.current = requestAnimationFrame(predictWebcam);
+    };
 
     return () => {
-      cleanupVapi();
+      if(animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
     };
   }, []);
 
@@ -343,6 +380,14 @@ function StartInterview() {
     if (faceWarning.includes('❌')) return 'text-red-500';
     return 'text-gray-500';
   };
+
+  const getSentimentIcon = () => {
+      switch(currentSentiment.toLowerCase()){
+          case 'confident': return <Smile className="h-5 w-5 text-green-500"/>;
+          case 'slightly hesitant': return <Meh className="h-5 w-5 text-yellow-500"/>;
+          default: return <Frown className="h-5 w-5 text-gray-500"/>
+      }
+  }
 
   return (
     <div className='flex flex-col min-h-screen bg-gray-100'>
@@ -362,15 +407,36 @@ function StartInterview() {
         <div className='w-full max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8'>
 
           {/* AI Recruiter Panel */}
-          <div className='bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col items-center justify-center p-8 aspect-video'>
-            <div className={`relative rounded-full p-2 transition-all duration-300 ${!activeUser ? 'ring-4 ring-blue-500 ring-opacity-75' : 'ring-4 ring-transparent'}`}>
-              <Image src='/OIP.png' alt='AI Recruiter' width={100} height={100} className='w-24 h-24 rounded-full object-cover shadow-md' />
-              {!activeUser && (
-                <span className='absolute inset-0 rounded-full bg-blue-500 opacity-75 animate-ping'></span>
-              )}
-            </div>
-            <h2 className='text-2xl font-semibold text-gray-800 mt-5'>AI Recruiter</h2>
-            <p className='text-gray-500 mt-1 h-6'>{activeUser ? 'Listening for your response...' : 'Speaking...'}</p>
+          <div className='bg-white rounded-xl shadow-lg border border-gray-200 flex flex-col justify-between p-8 aspect-video'>
+              <div className="text-center">
+                <div className={`relative inline-block rounded-full p-2 transition-all duration-300 ${!activeUser ? 'ring-4 ring-blue-500 ring-opacity-75' : 'ring-4 ring-transparent'}`}>
+                    <Image src='/OIP.png' alt='AI Recruiter' width={100} height={100} className='w-24 h-24 rounded-full object-cover shadow-md' />
+                    {!activeUser && (
+                        <span className='absolute inset-0 rounded-full bg-blue-500 opacity-75 animate-ping'></span>
+                    )}
+                </div>
+                <h2 className='text-2xl font-semibold text-gray-800 mt-5'>AI Recruiter</h2>
+                <p className='text-gray-500 mt-1 h-6'>{activeUser ? 'Listening for your response...' : 'Speaking...'}</p>
+              </div>
+              
+              {/* --- NEW: Advanced Analysis Display --- */}
+              <div className='mt-6 border-t pt-4 space-y-3 text-sm'>
+                  <h3 className="text-lg font-semibold text-gray-700 text-center mb-2">Real-Time Analysis</h3>
+                  <div className='flex items-center justify-between'>
+                      <span className='font-medium text-gray-600 flex items-center gap-2'><Smile className="h-5 w-5"/>Sentiment Analysis:</span>
+                      <span className='font-mono px-2 py-1 bg-gray-100 rounded-md flex items-center gap-2'>{getSentimentIcon()} {currentSentiment}</span>
+                  </div>
+                  <div className='flex items-center justify-between'>
+                      <span className='font-medium text-gray-600 flex items-center gap-2'><BrainCircuit className="h-5 w-5"/>Vocal Emotion:</span>
+                      <span className='font-mono px-2 py-1 bg-gray-100 rounded-md'>{currentEmotion}</span>
+                  </div>
+                   <div className='flex items-center justify-between'>
+                      <span className='font-medium text-gray-600 flex items-center gap-2'><Star className="h-5 w-5"/>Answer Quality:</span>
+                      <span className='font-mono px-2 py-1 bg-gray-100 rounded-md'>Awaiting...</span>
+                  </div>
+              </div>
+              {/* --- END: Advanced Analysis Display --- */}
+
           </div>
           
           {/* User Video Panel */}
@@ -403,13 +469,11 @@ function StartInterview() {
       {/* Footer Controls */}
       <footer className='w-full bg-white bg-opacity-75 backdrop-blur-sm p-4 sticky bottom-0 border-t'>
         <div className='max-w-md mx-auto flex items-center justify-center gap-6'>
-          <button className='p-4 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors cursor-not-allowed' disabled>
-            <Mic className='h-6 w-6' />
-          </button>
+          
           
           {!loading ? (
-            <button 
-              className='p-5 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg transform hover:scale-105' 
+            <button
+              className='p-5 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors shadow-lg transform hover:scale-105'
               onClick={stopInterview}
               aria-label="End Interview"
             >

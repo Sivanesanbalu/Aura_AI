@@ -1,4 +1,4 @@
-// File: app/interview/[interview_id]/page.jsx (Corrected)
+
 "use client";
 
 import React, { useContext, useEffect, useState } from 'react';
@@ -82,12 +82,12 @@ function Interview() {
   };
 
   return (
-    // --- MODIFICATION: The background is now a simple, light gray. Animated blobs are removed. ---
-    <div className='min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4'>
+    
+    <div className='min-h-screen flex flex-col items-center justify-center bg-gray-500 p-4'>
       
-      {/* --- MODIFICATION: The Main Card is now a solid white form. --- */}
+      {/* The Main Card is now a solid white form. */}
       <div className="w-full max-w-2xl flex flex-col items-center justify-center 
-        bg-white border border-gray-200 rounded-2xl shadow-xl p-8">
+        bg-white border border-gray-600 rounded-2xl shadow-xl p-8">
         
         <h2 className="text-center text-2xl font-bold text-gray-800">
           AI Interview Platform
@@ -118,7 +118,7 @@ function Interview() {
           )}
         </div>
 
-        {/* --- MODIFICATION: Form fields are restyled for a light theme. --- */}
+        {/* Form fields are restyled for a light theme.*/}
         <div className='w-full mt-6 space-y-4'>
           <div>
             <label className='text-gray-700 font-medium mb-2 block'>Your Full Name</label>
@@ -126,7 +126,7 @@ function Interview() {
               placeholder='Enter your name...'
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              className="rounded-lg" // Let the default light styles apply
+              className="rounded-lg" 
             />
           </div>
           <div>
@@ -141,7 +141,7 @@ function Interview() {
           </div>
         </div>
 
-        {/* --- MODIFICATION: Tips Section is restyled for a light theme. --- */}
+        {/* Tips Section is restyled for a light theme.*/}
         <div className='p-4 bg-blue-50 border border-blue-200 flex gap-4 rounded-lg mt-8 w-full'>
           <Info className='text-blue-500 h-6 w-6 flex-shrink-0 mt-1' />
           <div>
@@ -154,7 +154,7 @@ function Interview() {
           </div>
         </div>
 
-        {/* --- MODIFICATION: Button is now a simple, solid color. --- */}
+        {/*  Button is now a simple, solid color. */}
         <Button
           className='mt-8 w-full font-bold text-lg py-6 rounded-lg 
             bg-blue-600 text-white

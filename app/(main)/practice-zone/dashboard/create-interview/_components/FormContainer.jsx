@@ -34,7 +34,7 @@ function FormContainer({ onHandleInputChange, GoToNext }) {
   };
 
   return (
-    <div className="p-8 bg-gray-50 rounded-2xl shadow-lg max-w-2xl mx-auto my-10">
+    <div className="p-8 bg-gray-50 rounded-2xl shadow-lg max-w-4xl mx-auto my-10">
       <div className="text-center mb-8">
         {/* Corrected image path */}
         <img src="/logo.png" alt="AuraAI" className="h-19 mx-auto mb-9" />

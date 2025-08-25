@@ -4,7 +4,7 @@ export const FixedInterviews = [
     title: 'Frontend Developer Preset',
     description: 'A ready-to-go interview for frontend roles. Click to start.',
     icon: Code2Icon,
-    path: '/interview/start/frontend-preset-1', 
+    path: 'http://localhost:3000/interview/bcc29046-53f0-4b45-beb1-bac18985548b', 
   },
   {
     title: 'Backend Developer Preset',
@@ -43,7 +43,7 @@ export const SideBarOptions = [
     path: '/practice-zone/dashboard',
   },
   {
-    name: 'Scheduled Interview',
+    name: 'Feedback',
     icon: Calendar,
     path: '/scheduled-interview',
   },

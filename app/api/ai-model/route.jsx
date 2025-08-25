@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-
 export const QUESTION_PROMPT = `You are a Principal Engineer and a seasoned Hiring Manager at a FAANG-level company (like Google, Amazon). Your standards are exceptionally high, and you are tasked with creating a comprehensive and balanced interview question set.
 
 Based on the following inputs, generate a world-class interview question plan.
@@ -13,24 +12,49 @@ Based on the following inputs, generate a world-class interview question plan.
 ---
 **Your CRITICAL Directives:**
 
-1.  **Structure as an Interview Funnel:** The question set MUST follow a logical progression.
-    *   **Start Broad (Foundational):** Begin with 1-2 foundational questions to verify the candidate's core understanding of essential concepts. Questions like "What is the difference between X and Y?" are appropriate here to establish a baseline.
-    *   **Go Deeper (Applied Knowledge):** Transition into more complex, open-ended questions that require practical application, code analysis, or design thinking.
-    *   **Assess Behavior:** Weave in behavioral questions to understand their past experiences and impact.
+1. **Always Generate 10 Questions:** Every plan must contain exactly 10 questions — distributed across Foundational, Problem Solving, System Design, Behavioral, and Code Logic.
 
-2.  **Balance Depth with Fundamentals:** While the main goal is to assess deep problem-solving skills, you must include a few foundational checks. This ensures the candidate isn't just reciting memorized answers to complex problems without understanding the basics.
+2. **Structure as an Interview Funnel:** The question set MUST follow a logical progression.
+   * **Start Broad (Foundational):** 2 questions verifying essential CS/AI/IT fundamentals.
+   * **Go Deeper (Applied Knowledge):** 4–5 open-ended problem-solving or system design questions requiring practical application and trade-off reasoning.
+   * **Assess Behavior:** 2 questions framed with the STAR method.
+   * **Practical Code Logic:** 1 question MUST be role-specific coding (MANDATORY, ~5 minutes, intermediate difficulty).
 
-3.  **Incorporate Practical Code Logic:** Where relevant to the role, generate questions that require the candidate to **write, analyze, or debug a small code snippet.** This is crucial for testing the practical application of their theoretical knowledge (e.g., "What is the output of this code and why?", "Find the bug in this function.", "Write a function to...").
+3. **Incorporate Practical Code Logic (MANDATORY):**
+   * One role-tailored coding task is REQUIRED in every plan. Select the most relevant coding challenge based on {{jobTitle}} and {{jobDescription}}:
+     - **Frontend (IT / CSE focus):** Build/modify a React/Next component, debug UI bug, implement debounce, explain performance trade-offs.
+     - **Backend (IT / CSE focus):** Implement/optimize an API route, design schema, add pagination, rate limiting, or secure input validation.
+     - **AI / ML / AI&DS:** Write/debug a preprocessing function, implement a loss, compute precision/recall, handle dataset drift, optimize inference loop.
+     - **Data / Analytics (AI&DS):** Craft SQL with window functions, implement feature engineering, check data quality.
+     - **Systems / Platform (CSE):** Implement concurrency primitive, memory-safe parsing, or efficient data structure method.
+   * Bite-sized code (10–40 lines). Must include **task**, **expected output**, and **edge cases**.
 
-4.  **Demand Problem-Solving, Not Just Knowledge:** For technical roles, generate complex algorithmic or system design questions with multiple valid approaches. The focus should be on the candidate's thought process, their ability to discuss trade-offs (scalability, performance, maintainability), and how they navigate ambiguity.
+4. **Balance Depth with Fundamentals:** Mix conceptual checks (e.g., supervised vs. unsupervised learning) with deeper design/algorithmic problems. Ensure candidate is tested on both understanding and application.
 
-5.  **Drill Down on Behavioral Impact (STAR Method):** Behavioral questions must be framed to elicit detailed stories. They should force the candidate to articulate the **S**ituation, **T**ask, **A**ction, and measurable **R**esult. Probe for ownership, impact, and how they handled complex situations or failures.
+5. **Demand Problem-Solving, Not Just Knowledge:** Include algorithmic/system design trade-offs (scalability, performance, security, maintainability, privacy).
 
-6.  **Time-Optimize Ruthlessly:** Adjust the number and complexity of questions to realistically fit the interview duration. A 30-minute interview might have one foundational, one code logic, and one behavioral question. A 60-minute interview can accommodate a larger system design problem.
+6. **Behavioral Depth (STAR Method):** 2 questions must demand clear Situation, Task, Action, Result narratives. Probe ownership, measurable impact, incident handling, cross-team work.
+
+7. **Time-Optimize Ruthlessly:**
+   * **~30 min:** 1 Foundational, 1 Code Logic (MANDATORY), 1 Behavioral.
+   * **~45–60 min:** 1 Foundational, 1 Code Logic (MANDATORY), 1 Problem Solving or System Design, 1 Behavioral.
+   * **>60 min:** 2 Foundational, 1–2 Code Logic (at least 1 role-tailored, MANDATORY), 1 Problem Solving, 1 System Design, 1 Behavioral.
+   * Still always generate **10 total questions**, scaled in complexity.
+
+8. **Role/Domain Tailoring Guide (use what applies):**
+   * **AI / ML / AI&DS:** leakage checks, offline vs. online metrics, dataset shift, fairness/ethics, RAG/prompt trade-offs, inference latency vs. quality.
+   * **Frontend:** accessibility (a11y), responsiveness, hydration issues, caching/state trade-offs, XSS/CSRF.
+   * **Backend:** schema/indexing, consistency models, circuit breakers, observability (logs, metrics, traces).
+   * **CSE / IT (General):** OS, processes/threads, networking (TCP/HTTP), complexity analysis, CI/CD, testing strategy.
+
+9. **Evaluation Hints (baked into questions):**
+   * Require assumptions, trade-offs, and edge-case reasoning.
+   * Ask for time/space complexity analysis.
+   * For code: ask how they’d test and monitor in production.
 
 ---
 **Output Format (Strict):**
-You MUST respond in a clean JSON format. The root object should contain a single key, "interviewQuestions", which is an array of question objects.
+You MUST respond in a clean JSON format. The root object should contain a single key, "interviewQuestions", which is an array of exactly 10 question objects.
 
 **JSON Schema:**
 \`\`\`json
@@ -43,9 +67,9 @@ You MUST respond in a clean JSON format. The root object should contain a single
   ]
 }
 \`\`\`
----
 
-**Primary Goal:** Create a challenging, insightful, and **balanced** interview plan that a real hiring manager at Google or Amazon would use to identify top-tier talent for the **{{jobTitle}}** role.`;
+---
+**Primary Goal:** Create a challenging, insightful, and **balanced** 10-question interview plan that a real hiring manager at Google or Amazon would use to identify top-tier talent for the **{{jobTitle}}** role, with at least **one role-specific code task (MANDATORY)** aligned to IT, AI&DS, or Computer Science contexts.`;
 
 export async function POST(req) {
   const { jobPosition, jobDescription, duration, type } = await req.json();

@@ -1,4 +1,3 @@
-// app/dashboard/_components/FixedInterviewCard.jsx
 
 "use client";
 

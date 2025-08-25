@@ -2,8 +2,8 @@ import React from 'react';
 
 function QuestionListContainer({ questionList }) {
   return (
-    <div>
-      <h2 className='font-bold text-lg mt-5'>Generated Interview Questions:</h2>
+    <div className='w-full p-4 bg-gray-50 rounded-md shadow-md mt-5'>
+      <h2 className='font-bold text-lg mt-5 '>Generated Interview Questions:</h2>
       {questionList.length === 0 ? (
         <p className="text-gray-500">No questions generated.</p>
       ) : (
