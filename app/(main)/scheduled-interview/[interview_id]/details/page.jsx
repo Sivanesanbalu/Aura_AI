@@ -1,56 +1,58 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
-import { supabase } from "@/app/components/supabaseClient";
+import { auth, db } from "@/firebase"; // ✅ Firebase import
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import InterviewDetailContainer from "./_components/InterviewDetailContainer";
-import CandidaList from './_components/CandidaList'
+import CandidaList from "./_components/CandidaList";
+
 function InterviewDetail() {
   const { interview_id } = useParams();
-  const { user } = useUser();
+  const [firebaseUser, setFirebaseUser] = useState(null);
   const [interviewDetail, setInterviewDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🔥 Listen for Firebase Auth changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 🔥 Fetch interview details
   useEffect(() => {
     const fetchData = async () => {
+      if (!firebaseUser || !interview_id) return;
+
+      setLoading(true);
+      setError(null);
+
       try {
-        if (!user || !interview_id) return;
+        const userEmail = firebaseUser.email;
 
-        const userEmail = user?.primaryEmailAddress?.emailAddress;
+        // Firestore query
+        const interviewRef = collection(db, "interview");
+        const q = query(
+          interviewRef,
+          where("email", "==", userEmail),
+          where("interview_id", "==", interview_id)
+        );
 
-        const result = await supabase
-          .from("interview")
-          .select(
-            `
-              jobPosition,
-              jobDescription,
-              type,
-              questionList,
-              duration,
-              interview_id,
-              created_at,
-              interview-feedback (
-                userEmail,
-                userName,
-                feedback,
-                created_at
-              )
-            `
-          )
-          .eq("email", userEmail)
-          .eq("interview_id", interview_id);
+        const querySnapshot = await getDocs(q);
 
-        if (result.error) {
-          console.error("❌ Supabase fetch error:", result.error);
-          setError("Failed to fetch interview data.");
+        if (querySnapshot.empty) {
+          setError("No interview data found.");
           setInterviewDetail(null);
         } else {
-          setInterviewDetail(result.data?.[0] || null);
+          const docData = querySnapshot.docs[0].data();
+          setInterviewDetail(docData);
         }
       } catch (err) {
-        console.error("❌ Unexpected error:", err);
+        console.error("❌ Firestore fetch error:", err);
         setError("An unexpected error occurred.");
       } finally {
         setLoading(false);
@@ -58,9 +60,8 @@ function InterviewDetail() {
     };
 
     fetchData();
-  }, [user, interview_id]);
+  }, [firebaseUser, interview_id]);
 
-  
   if (loading) {
     return <p className="text-gray-500 text-center mt-5">Loading interview details...</p>;
   }
@@ -73,12 +74,11 @@ function InterviewDetail() {
     );
   }
 
-  
   return (
     <div className="mt-5">
       <h2 className="font-bold text-2xl mb-4">Interview Detail</h2>
       <InterviewDetailContainer interviewDetail={interviewDetail} />
-      <CandidaList candidateList={interviewDetail?.['interview-feedback']}/>
+      <CandidaList candidateList={interviewDetail?.["interview-feedback"]} />
     </div>
   );
 }

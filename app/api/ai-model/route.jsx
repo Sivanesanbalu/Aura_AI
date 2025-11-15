@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+
 export const QUESTION_PROMPT = `You are a Principal Engineer and a seasoned Hiring Manager at a FAANG-level company (like Google, Amazon). Your standards are exceptionally high, and you are tasked with creating a comprehensive and balanced interview question set.
 
 Based on the following inputs, generate a world-class interview question plan.
@@ -89,34 +90,36 @@ export async function POST(req) {
     const completion = await openai.chat.completions.create({
       model: 'mistralai/mistral-small-3.1-24b-instruct:free',
       messages: [
-        {
-          role: 'user',
-          content: FINAL_PROMPT,
-        },
+        { role: 'user', content: FINAL_PROMPT },
       ],
     });
 
     let messageContent = completion.choices[0].message.content;
 
-   
-    const jsonString = messageContent
-      .replace(/```(?:json)?\s*/gi, '') 
-      .replace(/```/g, '')             
-      .trim();
+    // Extract JSON block
+    const match = messageContent.match(/\{[\s\S]*\}/);
+    if (!match) {
+      console.error("No JSON found in AI response:\n", messageContent);
+      throw new Error("No JSON found in AI response");
+    }
 
-   
+    // Remove trailing commas to fix common AI formatting issues
+    const cleanedJson = match[0].replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
+
     let parsed;
     try {
-      parsed = JSON.parse(jsonString);
+      parsed = JSON.parse(cleanedJson);
     } catch (jsonError) {
-      console.error("JSON parsing failed. Raw content:\n", jsonString);
+      console.error("JSON parsing failed. Raw content:\n", cleanedJson);
       throw new Error("Failed to parse JSON from AI response");
     }
 
-    
     return NextResponse.json(parsed.interviewQuestions);
   } catch (e) {
     console.error("Parsing or API error:", e);
-    return NextResponse.json({ error: "Server error", details: e.message || String(e) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server error", details: e.message || String(e) },
+      { status: 500 }
+    );
   }
 }

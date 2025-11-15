@@ -33,8 +33,10 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "app/administration/page.jsx", "app/administration/_components/MemberActions.jsx"  ],
+    "**/*.tsx",
+    "**/*.js",    // <-- ADD THIS LINE
+    "**/*.jsx"
+, "app/administration/page.jsx", "app/administration/_components/MemberActions.jsx", "app/(main)/administration/create/page.jsx", "app/(main)/administration/page.jsx", "app/(main)/administration/[submissionId]/page.jsx", "app/(main)/administration/_components/FeedbackDisplay.jsx", "app/(main)/administration/_components/CandidateDataTable.jsx"  ],
   "exclude": [
     "node_modules"
   ]

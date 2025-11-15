@@ -1,85 +1,157 @@
-  "use client";
+"use client";
 
-  import { supabase } from "@/app/components/supabaseClient";
-  import { Button } from "@/components/ui/button";
-  import { useUser } from "@clerk/nextjs";
-  import { Video } from "lucide-react";
-  import React, { useEffect, useState } from "react";
-  import InterviewCard from "../practice-zone/dashboard/_components/InterviewCard";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  orderBy,
+  getDocs,
+  doc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
-  function ScheduledInterview() {
-    const { user } = useUser();
-    const [interviewList, setInterviewList] = useState([]);
-    const [loading, setLoading] = useState(true);
+import { Button } from "@/components/ui/button";
+import { Video } from "lucide-react";
 
-    const GetInterviewList = async () => {
-      const email = user?.primaryEmailAddress?.emailAddress;
-      if (!email) {
-        setLoading(false);
-        return;
-      }
+// Single Interview Card
+function InterviewCard({ interview, onSaveFeedback }) {
+  const [localFeedback, setLocalFeedback] = useState(interview.feedback || "");
+  const [saving, setSaving] = useState(false);
 
-      setLoading(true);
+  const handleSave = async () => {
+    if (!localFeedback.trim()) {
+      alert("Feedback cannot be empty!");
+      return;
+    }
+    setSaving(true);
+    await onSaveFeedback(interview.id, localFeedback);
+    setSaving(false);
+  };
 
-      const { data, error } = await supabase
-        .from("interview")
-        .select(`
-          id,
-          jobPosition,
-          duration,
-          interview_id,
-          created_at,
-          interview-feedback(userEmail, feedback, created_at)
-        `) 
-        .eq("email", email)
-        .order("created_at", { ascending: false });
+  return (
+    <div className="p-5 border rounded-md bg-white flex flex-col gap-3">
+      <h3 className="font-semibold text-lg">{interview.title || "Interview"}</h3>
+      <p className="text-gray-600">{interview.description || "No description"}</p>
+      
+      <p className="text-gray-500 text-sm">
+        Scheduled on: {interview.created_at?.toDate().toLocaleString() || "N/A"}
+      </p>
 
-      if (error) {
-        console.error("❌ Supabase fetch error:", error);
-      } else {
-        setInterviewList(data || []);
-      }
+      <textarea
+        className="border rounded-md p-2 w-full"
+        rows={3}
+        placeholder="Enter feedback..."
+        value={localFeedback}
+        onChange={(e) => setLocalFeedback(e.target.value)}
+      />
 
-      setLoading(false);
-    };
+      <Button onClick={handleSave} disabled={saving}>
+        {saving ? "Saving..." : "Save Feedback"}
+      </Button>
 
-    useEffect(() => {
-      if (user?.primaryEmailAddress?.emailAddress) {
-        GetInterviewList();
-      }
-    }, [user]);
+      {interview.feedback && (
+        <p className="text-green-600 mt-2">Previous Feedback: {interview.feedback}</p>
+      )}
+    </div>
+  );
+}
 
-    return (
-      <div className=" w-full mt-10">
-        <h2 className="font-bold text-xl mb-4">Interview List With Candidate Feedback</h2>
+// Main Scheduled Interview Component
+function ScheduledInterview() {
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [interviewList, setInterviewList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-        {loading && (
-          <p className="text-center text-gray-500 mt-4">Loading interviews...</p>
-        )}
+  // Listen for Firebase Auth User
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
-        {!loading && !interviewList?.length && (
-          <div className="p-5 mt-6 flex flex-col items-center gap-4 border rounded-md bg-white">
-            <Video className="h-10 w-10 text-primary" />
-            <p className="text-gray-700">No interviews scheduled yet.</p>
-            <Button onClick={() => window.location.assign("/interview/create")}>
-              Create New Interview
-            </Button>
-          </div>
-        )}
+  // Fetch all interviews from Firestore
+  const GetInterviewList = async () => {
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, "interview"),
+        orderBy("created_at", "desc")
+      );
 
-        {!loading && interviewList?.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
-            {interviewList.map((interview) => (
-              <InterviewCard
-                key={interview.id}
-                interview={interview}
-                viewDetail={true}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+      const querySnapshot = await getDocs(q);
+      const results = [];
+      querySnapshot.forEach((doc) => {
+        results.push({ id: doc.id, ...doc.data() });
+      });
 
-  export default ScheduledInterview;
+      setInterviewList(results);
+    } catch (err) {
+      console.error("Firestore fetch error:", err);
+      alert("Failed to fetch interviews. Check console for details.");
+    }
+    setLoading(false);
+  };
+
+  // Save feedback to Firestore
+  const saveFeedback = async (interviewId, feedback) => {
+    try {
+      const docRef = doc(db, "interview", interviewId);
+      await updateDoc(docRef, { feedback, updated_at: serverTimestamp() });
+
+      // Update local state for instant UI update
+      setInterviewList((prev) =>
+        prev.map((item) =>
+          item.id === interviewId ? { ...item, feedback } : item
+        )
+      );
+
+      alert("Feedback saved successfully!");
+    } catch (err) {
+      console.error("Failed to save feedback:", err);
+      alert("Failed to save feedback! Check console for details.");
+    }
+  };
+
+  // Fetch interviews when component mounts or user changes
+  useEffect(() => {
+    GetInterviewList();
+  }, [firebaseUser]);
+
+  return (
+    <div className="w-full mt-10">
+      <h2 className="font-bold text-xl mb-4">Interview List With Feedback</h2>
+
+      {loading && (
+        <p className="text-center text-gray-500 mt-4">Loading interviews...</p>
+      )}
+
+      {!loading && !interviewList.length && (
+        <div className="p-5 mt-6 flex flex-col items-center gap-4 border rounded-md bg-white">
+          <Video className="h-10 w-10 text-primary" />
+          <p className="text-gray-700">No interviews scheduled yet.</p>
+          <Button onClick={() => window.location.assign("/interview/create")}>
+            Create New Interview
+          </Button>
+        </div>
+      )}
+
+      {!loading && interviewList.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mt-6">
+          {interviewList.map((interview) => (
+            <InterviewCard
+              key={interview.id}
+              interview={interview}
+              onSaveFeedback={saveFeedback}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default ScheduledInterview;

@@ -1,12 +1,13 @@
 'use client';
 
 import { InterviewDataContex } from '@/context/InterviewDataContext';
-import { Loader2Icon, Mic, Phone, Timer, Star, Smile, Meh, Frown, BrainCircuit } from 'lucide-react';
+import { Loader2Icon, Phone, Timer, Star, Smile, Meh, Frown, BrainCircuit } from 'lucide-react';
 import Image from 'next/image';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import Vapi from '@vapi-ai/web';
 import { toast } from 'sonner';
-import { supabase } from '@/app/components/supabaseClient';
+import { db } from '@/lib/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 
@@ -222,22 +223,21 @@ function StartInterview() {
       const result = await axios.post('/api/ai-feedback', { conversation });
       const feedback = result.data;
 
-      const { error } = await supabase.from('interview-feedback').insert([
-        {
-          userName: interviewInfo?.userName,
-          userEmail: interviewInfo?.userEmail,
-          interview_id,
-          feedback,
-          recommended: false,
-        },
-      ]);
+      try {
+      await addDoc(collection(db, 'interview-feedback'), {
+        userName: interviewInfo?.userName,
+        userEmail: interviewInfo?.userEmail,
+        interview_id,
+        feedback,
+        recommended: false,
+        createdAt: new Date()
+      });
+      toast.success('Feedback saved');
+    } catch (err) {
+      console.error('Firebase error:', err);
+      toast.error('Failed to save feedback');
+    }
 
-      if (error) {
-        console.error('Supabase error:', error);
-        toast.error('Failed to save feedback');
-      } else {
-        toast.success('Feedback saved');
-      }
     } catch (err) {
       console.error('Feedback generation error:', err);
       toast.error('Failed to generate feedback');

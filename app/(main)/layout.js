@@ -2,18 +2,19 @@
 import React from "react";
 import DashboardProvider from "./provider";
 import { Header } from "./_components/Header";
-import Image from 'next/image';
 import { ThemeProvider } from "next-themes";
+
 function MainLayout({ children }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <DashboardProvider>
-        
-        <div className="min-h-screen w-full bg-background">
+        {/* Full-screen flex layout */}
+        <div className="flex flex-col min-h-screen w-screen bg-background overflow-hidden">
+          {/* Header stays fixed on top */}
           <Header />
           
-          
-          <main className="px-6 md:px-85">
+          {/* Main content fills remaining space */}
+          <main className="flex-grow w-full h-full m-0 p-0">
             {children}
           </main>
         </div>

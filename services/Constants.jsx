@@ -31,17 +31,8 @@ export const SideBarOptions = [
     icon: LayoutDashboard, 
     path: '/dashboard',
   },
-  {
-    name: 'Administration',
-    icon: Users,
-    path: '/administration',
-    
-  },
-  {
-    name: 'Practice Zone',
-    icon: Swords,
-    path: '/practice-zone/dashboard',
-  },
+  
+  
   {
     name: 'Feedback',
     icon: Calendar,

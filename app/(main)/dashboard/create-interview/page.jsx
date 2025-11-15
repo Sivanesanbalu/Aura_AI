@@ -8,16 +8,17 @@ import FormContainer from './_components/FormContainer';
 import QuestionList from './_components/QuestionList';
 import { toast } from 'sonner';
 import InterviewLink from './_components/InterviewLink';
-import SyncUserToSupabase from '@/app/components/SyncUserToSupabase'; 
-import { useUser } from '@clerk/nextjs';
+
+import { useAuth } from '@/context/AuthContext'; // ✅ Firebase Auth Context
 
 function CreateInterview() {
   const router = useRouter();
+  const { user } = useAuth(); // get the current Firebase user from your context
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({});
   const [interviewId, setInterviewId] = useState();
   const [questionList, setQuestionList] = useState([]);
-  const { user } = useUser();
 
   const onHandleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -40,13 +41,21 @@ function CreateInterview() {
     setStep(step + 1);
   };
 
-  return (
-    <div className="mt-5 px-10 md:px-24 lg:px-44 xl:px-56">
-      <SyncUserToSupabase />
-      <div className='flex gap-5 items-center'>
-        <ArrowLeft onClick={() => router.back()} className='' />
-        <h2 className='font-bold text-2xl'>Create New Interview</h2>
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
+        <p className="text-lg font-medium">Please sign in to create an interview.</p>
       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white text-black mt-5 px-10 md:px-24 lg:px-44 xl:px-56">
+      <div className='flex gap-5 items-center mb-5'>
+        <ArrowLeft onClick={() => router.back()} className="text-black" />
+        <h2 className='font-bold text-2xl text-black'>Create New Interview</h2>
+      </div>
+
       <Progress value={step * 33.33} className='my-5' />
 
       {step === 1 ? (

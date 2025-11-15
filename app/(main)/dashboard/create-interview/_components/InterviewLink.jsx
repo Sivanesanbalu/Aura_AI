@@ -63,7 +63,7 @@ function InterviewLink({ interview_id, formData, questionList }) {
         {formData && (
           <motion.div
             variants={itemVariants}
-            className="bg-white p-10 rounded-2xl shadow-md border border-gray-200 mb-8"
+            className="bg-white p-10 rounded-2xl shadow-md border border-gray-200 mb-13"
           >
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Interview Details</h2>
             <div className="space-y-4">

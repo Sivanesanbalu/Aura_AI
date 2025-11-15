@@ -12,8 +12,17 @@ export async function POST(req) {
     } catch {
       convoData = conversation;
     }
-    
-    const FINAL_PROMPT = FEEDBACK_PROMPT.replace('{{conversation}}', JSON.stringify(convoData));
+
+    const FINAL_PROMPT = `
+${FEEDBACK_PROMPT}
+
+IMPORTANT:
+Return ONLY valid JSON. No explanation text. No markdown. No commentary.
+Your entire response MUST be 100% valid JSON.
+
+Conversation:
+${JSON.stringify(convoData)}
+    `;
 
     const openai = new OpenAI({
       baseURL: "https://openrouter.ai/api/v1",
@@ -21,36 +30,47 @@ export async function POST(req) {
     });
 
     const completion = await openai.chat.completions.create({
-      model: 'google/gemma-3n-e2b-it:free',
+      model: "google/gemma-3n-e2b-it:free",
       messages: [
         {
-          role: 'user',
+          role: "user",
           content: FINAL_PROMPT,
         },
       ],
     });
 
-    let messageContent = completion.choices[0].message.content;
+    let content = completion.choices[0].message.content;
 
-    const jsonString = messageContent
-      .replace(/```(?:json)?\s*/gi, '')
-      .replace(/```/g, '')
-      .trim();
+    // 🔥 Extract ONLY the first valid JSON block
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      console.error("❌ No JSON found in model output");
+      return NextResponse.json(
+        { error: "AI did not return JSON", raw: content },
+        { status: 500 }
+      );
+    }
+
+    const jsonString = jsonMatch[0];
 
     let parsed;
     try {
       parsed = JSON.parse(jsonString);
-    } catch (jsonError) {
-      console.error("JSON parsing failed. Raw content:\n", jsonString);
-      throw new Error("Failed to parse JSON from AI response");
+    } catch (err) {
+      console.error("❌ JSON parsing failed:\n", jsonString);
+      return NextResponse.json(
+        { error: "Invalid JSON returned by AI", raw: jsonString },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json(parsed); 
+    return NextResponse.json(parsed);
 
-  } catch (e) {
-    console.error("Parsing or API error:", e);
+  } catch (error) {
+    console.error("❌ Server Error:", error);
     return NextResponse.json(
-      { error: "Server error", details: e.message || String(e) },
+      { error: "Server crashed", details: error.message },
       { status: 500 }
     );
   }

@@ -6,13 +6,15 @@ import Image from 'next/image';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import Vapi from '@vapi-ai/web';
 import { toast } from 'sonner';
-import { supabase } from '@/app/components/supabaseClient';
+
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
-
+import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
 function StartInterview() {
   const { interviewInfo } = useContext(InterviewDataContex);
   const vapiRef = useRef(null); 
+  const db = getFirestore(app);
 
   const [activeUser, setActiveUser] = useState(false);
   const [conversation, setConversation] = useState();
@@ -178,38 +180,40 @@ function StartInterview() {
   // --- MODIFICATION END ---
 
   const GenerateFeedback = async () => {
-    if (feedbackGenerated || !conversation) {
-      router.replace(`/interview/${interview_id}/completed`);
-      return;
-    };
-    setFeedbackGenerated(true);
+  if (feedbackGenerated || !conversation?.length) {
+    router.replace(`/interview/${interview_id}/completed`);
+    return;
+  }
+
+  setFeedbackGenerated(true);
+
+  try {
+    const result = await axios.post('/api/ai-feedback', { conversation });
+    const feedbackData = result.data; // <-- store the API response
+
     try {
-      const result = await axios.post('/api/ai-feedback', { conversation });
-      const feedback = result.data;
-
-      const { error } = await supabase.from('interview-feedback').insert([
-        {
-          userName: interviewInfo?.userName,
-          userEmail: interviewInfo?.userEmail,
-          interview_id,
-          feedback,
-          recommended: false,
-        },
-      ]);
-
-      if (error) {
-        console.error('Supabase error:', error);
-        toast.error('Failed to save feedback');
-      } else {
-        toast.success('Feedback saved');
-      }
+      await addDoc(collection(db, 'interview-feedback'), {
+        userName: interviewInfo?.userName,
+        userEmail: interviewInfo?.userEmail,
+        interview_id,
+        feedback: feedbackData, // <-- use this
+        recommended: false,
+        createdAt: new Date()
+      });
+      toast.success('Feedback saved');
+    } catch (err) {
+      console.error('Firebase error:', err);
+      toast.error('Failed to save feedback');
+    }
+ 
     } catch (err) {
       console.error('Feedback generation error:', err);
       toast.error('Failed to generate feedback');
     } finally {
-        router.replace(`/interview/${interview_id}/completed`);
+      router.replace(`/interview/${interview_id}/completed`);
     }
   };
+
 
   useEffect(() => {
     if (!vapiRef.current) return;

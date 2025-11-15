@@ -1,52 +1,74 @@
-"use client"
-import { supabase } from '@/app/components/supabaseClient';
-import { Button } from '@/components/ui/button';
-import { Video } from 'lucide-react';
+"use client";
 
-import React, { useEffect, useState } from "react";
-import InterviewCard from '../practice-zone/dashboard/_components/InterviewCard';
-import { useUser } from '@clerk/nextjs';
-
+import React, { useEffect, useState, useCallback } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import { Video } from "lucide-react";
+import InterviewCard from "@/components/InterviewCard"; // Make sure this exists
 
 function AllInterview() {
-  const { user } = useUser();
+  const [firebaseUser, setFirebaseUser] = useState(null);
   const [interviewList, setInterviewList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const fetchInterviews = async () => {
-    const email = user?.emailAddresses?.[0]?.emailAddress;
-    if (!email) return;
+  // Listen to Firebase auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch interviews from Firestore
+  const fetchInterviews = useCallback(async () => {
+    if (!firebaseUser?.email) return;
 
     setLoading(true);
+    setError("");
 
-    const { data, error } = await supabase
-      .from("interview")
-      .select("*")
-      .eq("email", email)
-      .order("created_at", { ascending: false })
-      
-    if (error) {
-      toast.error("❌ Error fetching interviews.");
-      console.error("Supabase error:", error);
-    } else {
-      setInterviewList(data || []);
+    try {
+      const q = query(
+        collection(db, "interview"),
+        where("email", "==", firebaseUser.email),
+        orderBy("created_at", "desc") // Ensure index exists
+      );
+
+      const querySnapshot = await getDocs(q);
+      const interviews = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setInterviewList(interviews);
+    } catch (err) {
+      console.error("Error fetching interviews:", err);
+      setError("Failed to load interviews. Please try again.");
+      setInterviewList([]);
     }
 
     setLoading(false);
-  };
+  }, [firebaseUser]);
 
+  // Automatically fetch interviews when user logs in
   useEffect(() => {
-    if (user?.emailAddresses?.[0]?.emailAddress) {
+    if (firebaseUser?.email) {
       fetchInterviews();
     }
-  }, [user]);
+  }, [firebaseUser, fetchInterviews]);
 
   return (
     <div className="my-5">
       <div className="flex justify-between items-center">
-        <h2 className="font-bold text-2xl "></h2>
+        <h2 className="font-bold text-2xl">All Interviews</h2>
         {!loading && (
-          <Button variant="outline" className="bg-blue-600 text-white hover:bg-blue-700" onClick={fetchInterviews}>
+          <Button
+            variant="outline"
+            className="bg-blue-600 text-white hover:bg-blue-700"
+            onClick={fetchInterviews}
+          >
             Refresh
           </Button>
         )}
@@ -56,10 +78,12 @@ function AllInterview() {
         <p className="mt-6 text-center text-gray-500 animate-pulse">
           Loading interviews...
         </p>
+      ) : error ? (
+        <p className="mt-6 text-center text-red-500">{error}</p>
       ) : interviewList.length === 0 ? (
         <div className="p-5 mt-6 flex flex-col items-center gap-4 border rounded-md bg-white">
           <Video className="h-10 w-10 text-primary" />
-          <p className="text-gray-700"></p>
+          <p className="text-gray-700">No interviews scheduled yet.</p>
           <Button onClick={() => (window.location.href = "/interview/create")}>
             Create New Interview
           </Button>
@@ -75,4 +99,4 @@ function AllInterview() {
   );
 }
 
-export default AllInterview
+export default AllInterview;

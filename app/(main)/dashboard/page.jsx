@@ -1,247 +1,169 @@
 "use client";
 
 import React from "react";
-import Link from "next/link"; // Added for functional links
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  User,
-  Briefcase,
-  Calendar,
-  BarChart,
-  Video,
-  Phone,
   Code2Icon,
   BrainCircuit,
   User2Icon,
+  ArrowRight,
 } from "lucide-react";
 
-// Data provided for the "Instant Interview" tab
 const FixedInterviews = [
   {
     title: "Frontend Developer",
-    description: "A ready-to-go interview for frontend roles. Click to start.",
+    description: "Simulate a realistic frontend coding interview experience.",
     icon: Code2Icon,
     path: "http://localhost:3000/interview/bcc29046-53f0-4b45-beb1-bac18985548b",
   },
   {
-    title: "Electronics Engineer",
-    description:
-      "An instant interview for backend positions, ready for candidates.",
+    title: "Backend Developer",
+    description: "Evaluate your backend, API, and database design skills.",
     icon: BrainCircuit,
     path: "http://localhost:3000/interview/281936a8-e661-4e19-a3e1-3056f7b110bb",
   },
   {
-    title: "AI Developer",
-    description:
-      "A general interview for assessing teamwork and communication skills.",
+    title: "Behavioral Interview",
+    description: "Assess communication, collaboration, and leadership skills.",
     icon: User2Icon,
     path: "http://localhost:3000/interview/46de09d2-75a2-4a1f-81be-9a74a726cec2",
   },
 ];
 
-function Dashboard() {
+export default function Dashboard() {
   return (
-    <div className="space-y-12 mt-8">
-      {/* Dashboard Header */}
-      <div>
-        <h2 className="font-bold text-3xl text-foreground tracking-tight">
-          Dashboard
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-[#fafafa] via-[#f1f1f1] to-[#e7e9ec] dark:from-[#0b0b0b] dark:via-[#121212] dark:to-[#181818] text-foreground">
+
+      <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-purple-500/10 blur-3xl pointer-events-none" />
+
+      <section className="relative w-full flex flex-col md:flex-row items-center justify-between px-8 md:px-20 py-24 gap-12 overflow-hidden">
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex-1 space-y-6 max-w-2xl z-10"
+        >
+          <h1 className="text-5xl md:text-6xl font-extrabold leading-tight tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Create Your Own AI Interview
+          </h1>
+
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            Build intelligent, adaptive video interviews in seconds.<br />
+            Whether you’re preparing for your next job or hiring top talent,<br />
+            our AI interviewer adapts to your goals with real-time intelligence.
+          </p>
+
+          <Button
+            asChild
+            size="lg"
+            className="text-lg px-8 py-6 mt-4 rounded-xl shadow-md hover:shadow-primary/30 transition-all duration-300"
+          >
+            <Link href="/dashboard/create-interview">
+              Start Now <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
+          </Button>
+        </motion.div>
+
+        {/* === RIGHT SIDE — IMAGE MOVED UP === */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2 }}
+          className="flex-1 hidden md:flex items-center justify-center relative"
+        >
+          <img
+            src="/s.jpg"
+            alt="Hero Visual"
+            className="absolute top-[-160px] right-10 md:right-28 object-contain z-30"
+            style={{
+              width: "auto",
+              height: "auto",
+              maxWidth: "520px",
+              borderRadius: "20px",
+            }}
+          />
+
+          <motion.div
+            animate={{
+              scale: [1, 1.05, 1],
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            className="absolute top-[-150px] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-purple-500/40 via-pink-400/30 to-cyan-400/30 blur-3xl opacity-70"
+          ></motion.div>
+
+          <motion.div
+            animate={{
+              y: [0, -20, 0],
+              x: [0, 10, 0],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute w-52 h-52 rounded-full bg-gradient-to-br from-primary/50 to-purple-600/50 blur-3xl opacity-60"
+          ></motion.div>
+
+          <motion.div
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 25,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            className="absolute w-[700px] h-[700px] rounded-full border border-primary/20 blur-2xl"
+          ></motion.div>
+        </motion.div>
+      </section>
+
+      <section className="relative px-8 md:px-20 py-20 bg-gradient-to-t from-gray-100/40 to-transparent dark:from-[#101010]/50">
+        <h2 className="text-4xl font-semibold mb-12 tracking-tight text-center">
+          Or Choose a Prebuilt Template
         </h2>
-        <p className="text-muted-foreground mt-1">
-          A quick overview of candidates, jobs, and interviews.
-        </p>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="rounded-2xl shadow-md border dark:border-slate-800 hover:shadow-lg transition">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <User className="w-5 h-5 text-blue-500" />
-              Candidates
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Total: <span className="font-semibold text-foreground">245</span>
-            </p>
-            <p className="text-muted-foreground">
-              Shortlisted:{" "}
-              <span className="font-semibold text-foreground">87</span>
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md border dark:border-slate-800 hover:shadow-lg transition">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Briefcase className="w-5 h-5 text-green-500" />
-              Open Jobs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Active: <span className="font-semibold text-foreground">12</span>
-            </p>
-            <p className="text-muted-foreground">
-              Closed: <span className="font-semibold text-foreground">5</span>
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md border dark:border-slate-800 hover:shadow-lg transition">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Calendar className="w-5 h-5 text-purple-500" />
-              Interviews
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              This Week:{" "}
-              <span className="font-semibold text-foreground">14</span>
-            </p>
-            <p className="text-muted-foreground">
-              Pending: <span className="font-semibold text-foreground">6</span>
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl shadow-md border dark:border-slate-800 hover:shadow-lg transition">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BarChart className="w-5 h-5 text-orange-500" />
-              Analytics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Conversion Rate:{" "}
-              <span className="font-semibold text-foreground">68%</span>
-            </p>
-            <p className="text-muted-foreground">
-              Avg. Time to Hire:{" "}
-              <span className="font-semibold text-foreground">12d</span>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Interviews Toggle Section */}
-      <section>
-        <h2 className="font-bold text-2xl mb-5 text-foreground">Interviews</h2>
-
-        <Tabs defaultValue="create" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="fixed">Start an Instant Interview</TabsTrigger>
-            <TabsTrigger value="create">Create a New Interview</TabsTrigger>
-          </TabsList>
-
-          {/* This section remains unchanged as requested */}
-          <TabsContent value="fixed" className="mt-6">
-            {FixedInterviews.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {FixedInterviews.map((interview) => {
-                  const IconComponent = interview.icon;
-                  return (
-                    <a href={interview.path} key={interview.path}>
-                      <Card className="rounded-2xl shadow-md border dark:border-slate-800 hover:shadow-lg transition cursor-pointer h-full">
-                        <CardContent className="p-6 flex items-start gap-4">
-                          <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                            <IconComponent className="w-6 h-6 text-slate-800 dark:text-slate-200" />
-                          </div>
-                          <div className="flex flex-col">
-                            <h3 className="font-semibold text-foreground">
-                              {interview.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {interview.description}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </a>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center">
-                No instant interviews available. Switch to "Create a New
-                Interview".
-              </p>
-            )}
-          </TabsContent>
-
-          {/* === THIS SECTION IS UPDATED === */}
-          <TabsContent value="create" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Create New Interview Card */}
-              <Card className="rounded-2xl shadow-md border dark:border-slate-800 hover:shadow-lg transition flex flex-col justify-between">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                      <Video className="w-6 h-6 text-slate-800 dark:text-slate-200" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {FixedInterviews.map((interview, i) => {
+            const Icon = interview.icon;
+            return (
+              <motion.div
+                key={interview.path}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <Link
+                  href={interview.path}
+                  className="group relative flex flex-col justify-between h-full rounded-3xl p-8 bg-white/80 dark:bg-[#111]/70 backdrop-blur-xl border border-border/40 hover:border-primary/70 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                >
+                  <div>
+                    <div className="p-3 bg-primary/10 rounded-lg w-fit mb-4">
+                      <Icon className="w-8 h-8 text-primary group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-foreground">
-                        Create New Interview
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Design and schedule AI-powered video interviews for
-                        candidates.
-                      </p>
-                    </div>
+                    <h3 className="text-2xl font-semibold mb-2">
+                      {interview.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {interview.description}
+                    </p>
                   </div>
-                </CardContent>
-                <div className="px-6 pb-6 pt-0">
-                  {/* UPDATE: Link is now functional */}
-                  <Link href="/dashboard/create-interview" legacyBehavior>
-                    <a className="font-semibold text-sm text-foreground cursor-pointer hover:underline">
-                      Get Started →
-                    </a>
-                  </Link>
-                </div>
-              </Card>
 
-              {/* Mock Aptitude Test Card */}
-              <Card className="rounded-2xl shadow-md border dark:border-slate-800 hover:shadow-lg transition flex flex-col justify-between">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                      <Phone className="w-6 h-6 text-slate-800 dark:text-slate-200" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-foreground">
-                        Mock Aptitude Test
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Generate and assign mock aptitude tests to evaluate
-                        candidates.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-                <div className="px-6 pb-6 pt-0">
-                  {/* UPDATE: Link is now functional */}
-                  <Link href="/dashboard/aptitude" legacyBehavior>
-                    <a className="font-semibold text-sm text-foreground cursor-pointer hover:underline">
-                      Get Started →
-                    </a>
-                  </Link>
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+                  <ArrowRight className="w-6 h-6 mt-6 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all duration-300" />
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
       </section>
     </div>
   );
 }
-
-export default Dashboard;
