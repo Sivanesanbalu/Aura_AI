@@ -99,7 +99,10 @@ function InterviewCard({ interview, viewDetail = false, darkMode = true }) {
         </div>
         <div className={`flex items-center gap-3 text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
           <CalendarDays className="h-4 w-4 flex-shrink-0" />
-          <span>Created: {new Date(interview.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
+          
+          {/* ----- THIS IS THE FIX ----- */}
+          <span>Created: {interview.created_at.toDate().toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
+
         </div>
       </div>
 

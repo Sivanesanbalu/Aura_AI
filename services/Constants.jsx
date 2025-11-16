@@ -39,11 +39,7 @@ export const SideBarOptions = [
     path: '/scheduled-interview',
   },
   
-  {
-    name: 'All Interview',
-    icon: List,
-    path: '/all-interview',
-  },
+  
   {
     name: 'Settings',
     icon: Settings,
@@ -54,11 +50,7 @@ export const SideBarOptions = [
       icon: LogOut,
       path: '/',
   },
-  {
-    name: 'Billing',
-    icon: WalletCards,
-    path: '/billing',
-  },
+  
 ];
 
 

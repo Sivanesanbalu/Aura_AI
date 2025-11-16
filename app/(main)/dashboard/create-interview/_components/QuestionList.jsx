@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // <-- Import AnimatePresence
 import { db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import axios from 'axios';
@@ -83,20 +83,54 @@ function QuestionList({ formData, interview_id }) {
     }
   };
 
+  // --- MODIFICATIONS BELOW ---
+
   return (
     <div className="mt-4 flex flex-col items-center space-y-4">
-      {loading && (
-        <div className="flex items-center space-x-2">
-          <Loader2Icon className="animate-spin w-6 h-6 text-gray-600" />
-          <span>Generating Interview Questions...</span>
-        </div>
-      )}
+      {/* Wrap the loading state in AnimatePresence for smooth fade in/out */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            // Use flex-col for a slightly cleaner layout
+            className="flex flex-col items-center space-y-3"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Animate the icon with both rotate and scale (pulse) */}
+            <motion.div
+              animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+              transition={{
+                rotate: { repeat: Infinity, duration: 1, ease: 'linear' },
+                scale: { repeat: Infinity, duration: 1.5, ease: 'easeInOut' }
+              }}
+            >
+              {/* Removed animate-spin, framer-motion handles it. Made icon bigger/colored for effect. */}
+              <Loader2Icon className="w-8 h-8 text-blue-600" />
+            </motion.div>
+            
+            {/* Add a subtle "breathing" animation to the text */}
+            <motion.span
+              className="text-gray-700"
+              initial={{ opacity: 0.7 }}
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+            >
+              Generating Interview Questions...
+            </motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {!saved ? (
+      {/* This logic remains the same, but won't overlap with the loader */}
+      {!loading && !saved ? (
         <Button onClick={onFinish} disabled={saving}>
           {saving ? "Saving..." : "Save & Generate Interview"}
         </Button>
-      ) : (
+      ) : null}
+
+      {!loading && saved ? (
         <motion.div whileHover={{ scale: 1.05 }}>
           <Link href={`/interview/${generatedId}`}>
             <Button className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -104,7 +138,7 @@ function QuestionList({ formData, interview_id }) {
             </Button>
           </Link>
         </motion.div>
-      )}
+      ) : null}
     </div>
   );
 }
