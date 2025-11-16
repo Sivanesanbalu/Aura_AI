@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion'; // <-- Import AnimatePresence
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebaseClient';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';

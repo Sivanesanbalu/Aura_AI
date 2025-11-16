@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { BarChart, Bell, UserCog, ArrowLeft } from "lucide-react"; // ⭐ Added ArrowLeft icon
 import { toast } from "sonner";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebaseClient";
 import { doc, getDoc, setDoc } from "firebase/firestore"; // ⭐ Added setDoc
 
 function RecruiterProfilePage() {

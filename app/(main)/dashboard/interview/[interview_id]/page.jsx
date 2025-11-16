@@ -8,7 +8,7 @@ import { InterviewDataContex } from "@/context/InterviewDataContext";
 import { Clock, Info, Loader2Icon, Video } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebaseClient';
 import { doc, getDoc } from 'firebase/firestore';
 
 function Interview() {

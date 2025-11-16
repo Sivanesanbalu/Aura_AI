@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import InterviewHeader from "./_components/InterviewHeader";
+import InterviewHeader from "./_Components/InterviewHeader";
 import { InterviewDataContex } from "@/context/InterviewDataContext"; // ✅ Import added
 
 function InterviewLayout({ children }) {

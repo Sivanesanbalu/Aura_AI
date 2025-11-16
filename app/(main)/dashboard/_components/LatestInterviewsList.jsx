@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase"; // Firestore instance
+import { db } from "@/lib/firebaseClient"; // Firestore instance
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 
 import { toast } from "sonner";
