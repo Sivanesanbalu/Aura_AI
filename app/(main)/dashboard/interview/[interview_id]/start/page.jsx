@@ -6,7 +6,7 @@ import Image from 'next/image';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import Vapi from '@vapi-ai/web';
 import { toast } from 'sonner';
-import { db } from '@/lib/firebaseClient';
+import { db } from '@/lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';

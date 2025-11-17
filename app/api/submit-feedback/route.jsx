@@ -1,7 +1,7 @@
 "use server";
 
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebaseClient"; // your Firebase config
+import { db } from "@/lib/firebase"; // your Firebase config
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 
 export async function POST(request) {

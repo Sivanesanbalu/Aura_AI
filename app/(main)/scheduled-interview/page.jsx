@@ -7,7 +7,7 @@ import InterviewCard from "../dashboard/_components/InterviewCard";
  // Make sure your Firebase is initialized
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { db, auth } from "@/lib/firebaseClient";
+import { db, auth } from "@/lib/firebase";
 
 function ScheduledInterview() {
   const [userEmail, setUserEmail] = useState(null);

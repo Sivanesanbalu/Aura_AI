@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import { app } from '@/lib/firebaseClient';
+import { app } from '@/lib/firebase';
 function StartInterview() {
   const { interviewInfo } = useContext(InterviewDataContex);
   const vapiRef = useRef(null); 
