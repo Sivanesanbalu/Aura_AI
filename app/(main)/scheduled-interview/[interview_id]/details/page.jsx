@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { db, auth } from "@/app/components/firebaseClient"; // make sure firebase is initialized
+import { auth, db } from "@/firebase/config";
 import { doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
 import InterviewDetailContainer from "./_components/InterviewDetailContainer";
 import CandidaList from './_components/CandidaList';
